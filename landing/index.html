@@ -53,7 +53,41 @@
       </div>
     </section>
 
-    <!-- search block, featured listings, how it works go here -->
+    <section id="search" class="py-5" aria-labelledby="search-heading">
+      <div class="container">
+        <h2 id="search-heading" class="mb-4">Search rooms</h2>
+
+        <form class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label for="search-neighborhood" class="form-label">Neighborhood</label>
+            <select id="search-neighborhood" name="neighborhood" class="form-select">
+              <option value="" selected>Any neighborhood</option>
+              <option value="chapinero">Chapinero</option>
+              <option value="usaquen">Usaquén</option>
+              <option value="teusaquillo">Teusaquillo</option>
+              <option value="la-candelaria">La Candelaria</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label for="search-max-rent" class="form-label">Maximum rent</label>
+            <input type="number" id="search-max-rent" name="max_rent" class="form-control"
+                   placeholder="e.g. 1500000" min="0" step="50000">
+          </div>
+
+          <div class="col-md-4">
+            <label for="search-available-from" class="form-label">Available from</label>
+            <input type="date" id="search-available-from" name="available_from" class="form-control">
+          </div>
+
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary">Search rooms</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- featured listings, how it works go here -->
   </main>
 
   <footer>

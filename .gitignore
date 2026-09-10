@@ -1,0 +1,6 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Rails app (se agrega contenido real desde Assignment 2)

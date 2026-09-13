@@ -27,3 +27,7 @@ Reasoning behind the model in [`domain-model.dbml`](./domain-model.dbml).
 - A visit is 1-to-1 with its application; redoing a visit updates the same row rather than creating a new one.
 - Saved listings carry no metadata beyond a timestamp.
 - A report always targets a listing (the only reportable object named in the brief); action against a user is recorded on `moderation_actions`, not on the report itself.
+
+## Why the landing page keeps 4 "how it works" steps instead of 3
+
+The brief describes the process as three steps — *"publish or search, apply, visit and move in"* — with the last one written as a single combined step. We kept **Visit** and **Move In** as two separate cards on the landing page instead of merging them, because they are distinct moments in the domain model with their own state: a `visit` (proposed/confirmed/completed) happens before a decision is made, while moving in only follows the `accepted` application status and the listing's `closed` transition. Collapsing them into one card would hide that an applicant can be rejected after a visit and before moving in — a real outcome the application lifecycle explicitly supports (an `accepted` applicant moves in; every other visited applicant is auto-`rejected`). We judged that showing this distinction on the homepage sets more accurate expectations for a first-time visitor than following the brief's wording literally, at the cost of a minor deviation from the exact "three steps" phrasing.

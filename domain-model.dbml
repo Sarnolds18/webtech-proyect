@@ -1,0 +1,150 @@
+// Roomies — Domain Model
+// Paste this file's contents into https://dbdiagram.io to render and edit the diagram.
+
+Table users {
+  id integer [pk, increment]
+  full_name varchar
+  email varchar [unique, not null]
+  password_digest varchar [not null]
+  phone varchar
+  bio text
+  avatar_url varchar
+  role varchar [not null, note: 'member | moderator — a member can act as host and/or seeker']
+  status varchar [not null, default: 'active', note: 'active | suspended']
+  created_at datetime
+  updated_at datetime
+}
+
+Table neighborhoods {
+  id integer [pk, increment]
+  name varchar [not null, unique]
+  city varchar [not null]
+  active boolean [not null, default: true]
+  created_at datetime
+}
+
+Table amenities {
+  id integer [pk, increment]
+  name varchar [not null, unique]
+  icon varchar
+  active boolean [not null, default: true]
+}
+
+Table properties {
+  id integer [pk, increment]
+  host_id integer [not null, ref: > users.id, note: 'owner/manager of the property']
+  neighborhood_id integer [not null, ref: > neighborhoods.id]
+  address varchar [not null]
+  description text
+  created_at datetime
+  updated_at datetime
+}
+
+Table property_photos {
+  id integer [pk, increment]
+  property_id integer [not null, ref: > properties.id]
+  url varchar [not null]
+  alt_text varchar [not null]
+  position integer [not null, default: 0]
+}
+
+Table listings {
+  id integer [pk, increment]
+  property_id integer [not null, ref: > properties.id]
+  title varchar [not null]
+  description text
+  monthly_rent integer [not null]
+  available_from date [not null]
+  status varchar [not null, default: 'draft', note: 'draft | active | paused | closed | removed']
+  created_at datetime
+  updated_at datetime
+}
+
+Table listing_photos {
+  id integer [pk, increment]
+  listing_id integer [not null, ref: > listings.id]
+  url varchar [not null]
+  alt_text varchar [not null]
+  position integer [not null, default: 0]
+}
+
+Table listing_amenities {
+  listing_id integer [not null, ref: > listings.id]
+  amenity_id integer [not null, ref: > amenities.id]
+
+  indexes {
+    (listing_id, amenity_id) [pk]
+  }
+}
+
+Table applications {
+  id integer [pk, increment]
+  listing_id integer [not null, ref: > listings.id]
+  seeker_id integer [not null, ref: > users.id]
+  message text [not null]
+  status varchar [not null, default: 'pending', note: 'pending | shortlisted | visit_scheduled | accepted | rejected | withdrawn']
+  applied_at datetime [not null]
+  updated_at datetime
+
+  indexes {
+    (listing_id, seeker_id) [unique, note: 'a seeker cannot apply twice to the same listing while active']
+  }
+}
+
+Table visits {
+  id integer [pk, increment]
+  application_id integer [not null, ref: - applications.id, note: 'one visit per application']
+  proposed_at datetime [not null]
+  confirmed_at datetime
+  status varchar [not null, default: 'proposed', note: 'proposed | confirmed | completed | cancelled']
+  created_at datetime
+}
+
+Table reviews {
+  id integer [pk, increment]
+  property_id integer [not null, ref: > properties.id]
+  author_id integer [not null, ref: > users.id, note: 'seeker who completed a visit']
+  visit_id integer [not null, ref: - visits.id, note: 'the completed visit that grants review eligibility']
+  rating integer [not null, note: '1 to 5']
+  comment text
+  created_at datetime
+}
+
+Table review_replies {
+  id integer [pk, increment]
+  review_id integer [not null, ref: - reviews.id]
+  author_id integer [not null, ref: > users.id, note: 'host replying to the review']
+  comment text [not null]
+  created_at datetime
+}
+
+Table saved_listings {
+  user_id integer [not null, ref: > users.id]
+  listing_id integer [not null, ref: > listings.id]
+  saved_at datetime [not null]
+
+  indexes {
+    (user_id, listing_id) [pk]
+  }
+}
+
+Table reports {
+  id integer [pk, increment]
+  listing_id integer [not null, ref: > listings.id]
+  reporter_id integer [not null, ref: > users.id]
+  reason varchar [not null]
+  details text
+  status varchar [not null, default: 'open', note: 'open | dismissed | action_taken']
+  created_at datetime
+}
+
+Table moderation_actions {
+  id integer [pk, increment]
+  moderator_id integer [not null, ref: > users.id]
+  report_id integer [ref: > reports.id, note: 'nullable: not every action originates from a report']
+  target_listing_id integer [ref: > listings.id]
+  target_user_id integer [ref: > users.id]
+  action_type varchar [not null, note: 'dismiss_report | suspend_listing | remove_listing | suspend_user']
+  notes text
+  created_at datetime [not null]
+}

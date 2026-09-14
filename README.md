@@ -6,6 +6,7 @@ Roomies is a platform that connects people with a free room in a shared home to 
 
 - Matías Veto
 - Santiago Arnolds
+- Lucas Nestler
 
 ## Repository Structure
 

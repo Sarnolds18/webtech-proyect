@@ -1,150 +1,272 @@
-// Roomies — Domain Model
+// Roomies — Domain Model (Assignment 2)
 // Paste this file's contents into https://dbdiagram.io to render and edit the diagram.
+// Column names and types follow Rails conventions: bigint ids, *_id foreign keys, timestamps.
+// Enums are stored as strings in PostgreSQL and declared with `enum` in the Rails models.
+
+// ---------- Enums ----------
+
+Enum user_role {
+  member
+  moderator
+}
+
+Enum user_status {
+  active
+  suspended
+}
+
+Enum property_type {
+  apartment
+  house
+  studio
+}
+
+Enum listing_status {
+  draft [note: 'only the host can see it']
+  published [note: 'visible to everyone, open for applications']
+  reserved [note: 'an application was accepted, no new applications']
+  rented [note: 'the new housemate moved in']
+  withdrawn [note: 'taken down by the host or a moderator, pending applications are voided']
+}
+
+Enum application_status {
+  pending [note: 'the host has not answered yet']
+  shortlisted [note: 'the host wants to arrange a visit']
+  accepted [note: 'chosen for the room (at most one per listing)']
+  rejected [note: 'discarded by the host, or automatically when another one is accepted']
+  withdrawn [note: 'pulled back by the seeker']
+}
+
+Enum visit_status {
+  proposed [note: 'proposed by the host']
+  confirmed [note: 'confirmed by the seeker']
+  completed [note: 'the visit took place, enables a review']
+  cancelled [note: 'cancelled by the host, who can propose another one']
+}
+
+Enum report_reason {
+  fraudulent
+  misleading
+  offensive
+}
+
+Enum report_status {
+  open
+  dismissed
+  action_taken
+}
+
+Enum moderation_action_type {
+  dismiss_report
+  withdraw_listing
+  remove_review
+  suspend_user
+}
+
+// ---------- Users and catalogs ----------
 
 Table users {
-  id integer [pk, increment]
-  full_name varchar
-  email varchar [unique, not null]
+  id bigint [pk, increment]
+  name varchar [not null]
+  email_address varchar [not null, unique, note: 'name expected by the Rails 8 authentication generator']
   password_digest varchar [not null]
   phone varchar
   bio text
-  avatar_url varchar
-  role varchar [not null, note: 'member | moderator — a member can act as host and/or seeker']
-  status varchar [not null, default: 'active', note: 'active | suspended']
-  created_at datetime
-  updated_at datetime
+  role user_role [not null, default: 'member', note: 'a member acts as host on their own listings and as seeker on the rest']
+  status user_status [not null, default: 'active']
+  created_at datetime [not null]
+  updated_at datetime [not null]
 }
 
 Table neighborhoods {
-  id integer [pk, increment]
-  name varchar [not null, unique]
+  id bigint [pk, increment]
+  name varchar [not null]
   city varchar [not null]
-  active boolean [not null, default: true]
-  created_at datetime
+  active boolean [not null, default: true, note: 'moderators deactivate instead of deleting']
+  created_at datetime [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    (name, city) [unique]
+  }
 }
 
 Table amenities {
-  id integer [pk, increment]
+  id bigint [pk, increment]
   name varchar [not null, unique]
-  icon varchar
+  icon varchar [note: 'Bootstrap Icons class name, e.g. bi-wifi']
   active boolean [not null, default: true]
+  created_at datetime [not null]
+  updated_at datetime [not null]
 }
+
+// ---------- Properties and listings ----------
 
 Table properties {
-  id integer [pk, increment]
-  host_id integer [not null, ref: > users.id, note: 'owner/manager of the property']
-  neighborhood_id integer [not null, ref: > neighborhoods.id]
+  id bigint [pk, increment]
+  host_id bigint [not null, ref: > users.id, note: 'owner of the property']
+  neighborhood_id bigint [not null, ref: > neighborhoods.id]
+  title varchar [not null]
   address varchar [not null]
+  property_type property_type [not null]
+  bedrooms integer [not null]
+  bathrooms integer [not null]
+  shared_spaces text [note: 'living room, kitchen, terrace...']
   description text
-  created_at datetime
-  updated_at datetime
+  created_at datetime [not null]
+  updated_at datetime [not null]
+
+  checks {
+    `bedrooms >= 1` [name: 'properties_bedrooms_positive']
+    `bathrooms >= 1` [name: 'properties_bathrooms_positive']
+  }
 }
 
-Table property_photos {
-  id integer [pk, increment]
-  property_id integer [not null, ref: > properties.id]
-  url varchar [not null]
-  alt_text varchar [not null]
-  position integer [not null, default: 0]
+Table property_amenities {
+  id bigint [pk, increment]
+  property_id bigint [not null, ref: > properties.id]
+  amenity_id bigint [not null, ref: > amenities.id]
+  created_at datetime [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    (property_id, amenity_id) [unique]
+  }
+
+  Note: 'Join table for the many-to-many between properties and amenities.'
 }
 
 Table listings {
-  id integer [pk, increment]
-  property_id integer [not null, ref: > properties.id]
+  id bigint [pk, increment]
+  property_id bigint [not null, ref: > properties.id]
   title varchar [not null]
-  description text
-  monthly_rent integer [not null]
+  description text [note: 'Action Text rich text from Assignment 3']
+  house_rules text [note: 'Action Text rich text from Assignment 3']
+  monthly_rent integer [not null, note: 'CLP']
+  deposit integer [not null, default: 0, note: 'CLP']
   available_from date [not null]
-  status varchar [not null, default: 'draft', note: 'draft | active | paused | closed | removed']
-  created_at datetime
-  updated_at datetime
-}
-
-Table listing_photos {
-  id integer [pk, increment]
-  listing_id integer [not null, ref: > listings.id]
-  url varchar [not null]
-  alt_text varchar [not null]
-  position integer [not null, default: 0]
-}
-
-Table listing_amenities {
-  listing_id integer [not null, ref: > listings.id]
-  amenity_id integer [not null, ref: > amenities.id]
+  minimum_stay_months integer [not null, default: 1]
+  furnished boolean [not null, default: false]
+  private_bathroom boolean [not null, default: false]
+  status listing_status [not null, default: 'draft']
+  created_at datetime [not null]
+  updated_at datetime [not null]
 
   indexes {
-    (listing_id, amenity_id) [pk]
+    status
+    available_from
+    monthly_rent
   }
+
+  checks {
+    `monthly_rent > 0` [name: 'listings_rent_positive']
+    `deposit >= 0` [name: 'listings_deposit_not_negative']
+    `minimum_stay_months >= 1` [name: 'listings_minimum_stay_positive']
+  }
+
+  Note: 'Photos are attached with Active Storage from Assignment 3 (no photo tables).'
 }
+
+// ---------- Applications, visits and reviews ----------
 
 Table applications {
-  id integer [pk, increment]
-  listing_id integer [not null, ref: > listings.id]
-  seeker_id integer [not null, ref: > users.id]
+  id bigint [pk, increment]
+  listing_id bigint [not null, ref: > listings.id]
+  seeker_id bigint [not null, ref: > users.id]
   message text [not null]
-  status varchar [not null, default: 'pending', note: 'pending | shortlisted | visit_scheduled | accepted | rejected | withdrawn']
-  applied_at datetime [not null]
-  updated_at datetime
+  move_in_date date [not null]
+  stay_months integer [not null]
+  status application_status [not null, default: 'pending']
+  created_at datetime [not null]
+  updated_at datetime [not null]
 
   indexes {
-    (listing_id, seeker_id) [unique, note: 'a seeker cannot apply twice to the same listing while active']
+    (listing_id, seeker_id) [unique, note: 'a seeker cannot apply twice to the same listing']
+    status
   }
+
+  checks {
+    `stay_months >= 1` [name: 'applications_stay_positive']
+  }
+
+  Note: 'Partial unique index on listing_id WHERE status = accepted: a listing never has two accepted applications.'
 }
 
 Table visits {
-  id integer [pk, increment]
-  application_id integer [not null, ref: - applications.id, note: 'one visit per application']
-  proposed_at datetime [not null]
-  confirmed_at datetime
-  status varchar [not null, default: 'proposed', note: 'proposed | confirmed | completed | cancelled']
-  created_at datetime
+  id bigint [pk, increment]
+  application_id bigint [not null, ref: > applications.id, note: 'several visits per application: the host can cancel and propose another']
+  scheduled_at datetime [not null, note: 'must be after the application was created']
+  status visit_status [not null, default: 'proposed']
+  created_at datetime [not null]
+  updated_at datetime [not null]
 }
 
 Table reviews {
-  id integer [pk, increment]
-  property_id integer [not null, ref: > properties.id]
-  author_id integer [not null, ref: > users.id, note: 'seeker who completed a visit']
-  visit_id integer [not null, ref: - visits.id, note: 'the completed visit that grants review eligibility']
-  rating integer [not null, note: '1 to 5']
-  comment text
-  created_at datetime
-}
-
-Table review_replies {
-  id integer [pk, increment]
-  review_id integer [not null, ref: - reviews.id]
-  author_id integer [not null, ref: > users.id, note: 'host replying to the review']
+  id bigint [pk, increment]
+  visit_id bigint [not null, unique, ref: - visits.id, note: 'the completed visit that grants the review, one review per visit']
+  property_id bigint [not null, ref: > properties.id, note: 'denormalized from visit → application → listing to list reviews by property']
+  author_id bigint [not null, ref: > users.id, note: 'the seeker of the visit, never the host of the property']
+  rating integer [not null]
   comment text [not null]
-  created_at datetime
-}
+  created_at datetime [not null]
+  updated_at datetime [not null]
 
-Table saved_listings {
-  user_id integer [not null, ref: > users.id]
-  listing_id integer [not null, ref: > listings.id]
-  saved_at datetime [not null]
-
-  indexes {
-    (user_id, listing_id) [pk]
+  checks {
+    `rating BETWEEN 1 AND 5` [name: 'reviews_rating_range']
   }
 }
 
+Table review_replies {
+  id bigint [pk, increment]
+  review_id bigint [not null, unique, ref: - reviews.id, note: 'one reply per review']
+  author_id bigint [not null, ref: > users.id, note: 'the host of the reviewed property']
+  comment text [not null]
+  created_at datetime [not null]
+  updated_at datetime [not null]
+}
+
+// ---------- Saved listings, reports and moderation ----------
+
+Table saved_listings {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  listing_id bigint [not null, ref: > listings.id]
+  created_at datetime [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    (user_id, listing_id) [unique]
+  }
+
+  Note: 'Join table for the many-to-many between users (as seekers) and listings.'
+}
+
 Table reports {
-  id integer [pk, increment]
-  listing_id integer [not null, ref: > listings.id]
-  reporter_id integer [not null, ref: > users.id]
-  reason varchar [not null]
+  id bigint [pk, increment]
+  listing_id bigint [not null, ref: > listings.id]
+  reporter_id bigint [not null, ref: > users.id]
+  reason report_reason [not null]
   details text
-  status varchar [not null, default: 'open', note: 'open | dismissed | action_taken']
-  created_at datetime
+  status report_status [not null, default: 'open']
+  created_at datetime [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    (listing_id, reporter_id) [unique, note: 'a member reports a listing once']
+    status
+  }
 }
 
 Table moderation_actions {
-  id integer [pk, increment]
-  moderator_id integer [not null, ref: > users.id]
-  report_id integer [ref: > reports.id, note: 'nullable: not every action originates from a report']
-  target_listing_id integer [ref: > listings.id]
-  target_user_id integer [ref: > users.id]
-  action_type varchar [not null, note: 'dismiss_report | suspend_listing | remove_listing | suspend_user']
+  id bigint [pk, increment]
+  moderator_id bigint [not null, ref: > users.id]
+  report_id bigint [ref: > reports.id, note: 'nullable: not every action comes from a report']
+  target_listing_id bigint [ref: > listings.id]
+  target_user_id bigint [ref: > users.id]
+  action_type moderation_action_type [not null]
   notes text
   created_at datetime [not null]
+  updated_at datetime [not null]
+
+  Note: 'Audit log of what moderators did. A removed review is recorded in notes, since the review row is deleted.'
 }

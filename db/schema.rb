@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_133415) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_134635) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -103,6 +103,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_133415) do
     t.index ["property_id"], name: "index_property_amenities_on_property_id"
   end
 
+  create_table "review_replies", force: :cascade do |t|
+    t.bigint "review_id", null: false
+    t.bigint "author_id", null: false
+    t.text "comment", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_review_replies_on_author_id"
+    t.index ["review_id"], name: "index_review_replies_on_review_id", unique: true
+  end
+
+  create_table "reviews", force: :cascade do |t|
+    t.bigint "visit_id", null: false
+    t.bigint "property_id", null: false
+    t.bigint "author_id", null: false
+    t.integer "rating", null: false
+    t.text "comment", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_reviews_on_author_id"
+    t.index ["property_id"], name: "index_reviews_on_property_id"
+    t.index ["visit_id"], name: "index_reviews_on_visit_id", unique: true
+    t.check_constraint "rating >= 1 AND rating <= 5", name: "reviews_rating_range"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email_address", null: false
@@ -118,6 +142,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_133415) do
     t.check_constraint "status::text = ANY (ARRAY['active'::text, 'suspended'::text])", name: "users_status_valid"
   end
 
+  create_table "visits", force: :cascade do |t|
+    t.bigint "application_id", null: false
+    t.datetime "scheduled_at", null: false
+    t.string "status", default: "proposed", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["application_id"], name: "index_visits_on_application_id"
+    t.check_constraint "status::text = ANY (ARRAY['proposed'::text, 'confirmed'::text, 'completed'::text, 'cancelled'::text])", name: "visits_status_valid"
+  end
+
   add_foreign_key "applications", "listings"
   add_foreign_key "applications", "users", column: "seeker_id"
   add_foreign_key "listings", "properties"
@@ -125,4 +159,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_133415) do
   add_foreign_key "properties", "users", column: "host_id"
   add_foreign_key "property_amenities", "amenities"
   add_foreign_key "property_amenities", "properties"
+  add_foreign_key "review_replies", "reviews"
+  add_foreign_key "review_replies", "users", column: "author_id"
+  add_foreign_key "reviews", "properties"
+  add_foreign_key "reviews", "users", column: "author_id"
+  add_foreign_key "reviews", "visits"
+  add_foreign_key "visits", "applications"
 end

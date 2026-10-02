@@ -1,6 +1,7 @@
 class Application < ApplicationRecord
   belongs_to :listing
   belongs_to :seeker, class_name: "User"
+  has_many :visits, dependent: :destroy
 
   enum :status, {
     pending: "pending",

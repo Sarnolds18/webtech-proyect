@@ -3,6 +3,7 @@ class Listing < ApplicationRecord
   has_one :neighborhood, through: :property
   has_many :applications, dependent: :destroy
   has_many :seekers, through: :applications
+  has_many :reviews, through: :property
 
   enum :status, {
     draft: "draft",

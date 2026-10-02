@@ -37,9 +37,14 @@
         <% end %>
       </section>
 
-      <section aria-labelledby="amenities-heading">
+      <section class="mb-4" aria-labelledby="amenities-heading">
         <h2 id="amenities-heading" class="h4 fw-bold">Amenities of the property</h2>
         <%= render "shared/amenities", amenities: property.amenities %>
+      </section>
+
+      <section aria-labelledby="reviews-heading">
+        <h2 id="reviews-heading" class="h4 fw-bold">Reviews of the property</h2>
+        <%= render "reviews/list", property: property, reviews: @reviews %>
       </section>
     </div>
 

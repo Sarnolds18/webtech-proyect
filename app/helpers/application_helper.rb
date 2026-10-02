@@ -35,6 +35,13 @@ module ApplicationHelper
     tag.span status.humanize, class: "badge text-bg-#{STATUS_COLORS.fetch(status.to_s, "secondary")}"
   end
 
+  # Five stars, filled up to the rating. Screen readers get "4 out of 5" instead of the icons.
+  def rating_stars(rating)
+    stars = (1..5).map { |star| tag.i(class: "bi #{star <= rating ? "bi-star-fill" : "bi-star"}", aria: { hidden: true }) }
+
+    tag.span safe_join(stars), class: "text-warning text-nowrap", role: "img", aria: { label: "#{rating} out of 5" }
+  end
+
   def yes_no(flag)
     icon = flag ? "bi-check-circle-fill text-success" : "bi-x-circle text-secondary"
 

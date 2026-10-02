@@ -58,7 +58,7 @@
     </div>
   </div>
 
-  <section aria-labelledby="listings-heading">
+  <section class="mb-5" aria-labelledby="listings-heading">
     <h2 id="listings-heading" class="h4 fw-bold mb-3">Listings in this property</h2>
 
     <% if @property.listings.present? %>
@@ -68,5 +68,14 @@
     <% else %>
       <p class="text-muted mb-0">This property has no listings yet.</p>
     <% end %>
+  </section>
+
+  <section aria-labelledby="reviews-heading">
+    <h2 id="reviews-heading" class="h4 fw-bold">Reviews</h2>
+    <div class="row">
+      <div class="col-lg-8">
+        <%= render "reviews/list", property: @property, reviews: @reviews %>
+      </div>
+    </div>
   </section>
 </div>

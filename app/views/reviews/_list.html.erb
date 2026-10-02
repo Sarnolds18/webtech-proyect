@@ -1,0 +1,13 @@
+<%# Average rating and reviews of a property. Shared by the listing page and the property page. %>
+<% if reviews.present? %>
+  <% average = property.average_rating %>
+  <p class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <%= rating_stars(average.round) %>
+    <strong><%= average %></strong>
+    <span class="text-muted">from <%= pluralize(reviews.length, "review") %></span>
+  </p>
+
+  <%= render partial: "reviews/review", collection: reviews, as: :review %>
+<% else %>
+  <p class="text-muted mb-0">Nobody has reviewed this property yet.</p>
+<% end %>

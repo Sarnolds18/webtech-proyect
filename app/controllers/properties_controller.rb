@@ -6,6 +6,7 @@ class PropertiesController < ApplicationController
   end
 
   def show
+    @reviews = @property.reviews.includes(:author, reply: :author).recent_first
   end
 
   private

@@ -1,0 +1,18 @@
+<article class="border-top py-3">
+  <p class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <span>
+      <%= rating_stars(review.rating) %>
+      <strong class="ms-2"><%= review.author.name %></strong>
+    </span>
+    <span class="small text-muted"><%= long_date(review.created_at) %></span>
+  </p>
+
+  <%= simple_format review.comment, class: "mb-0" %>
+
+  <% if review.reply %>
+    <div class="bg-light border-start border-3 border-primary rounded-end p-3 mt-3">
+      <p class="small fw-semibold mb-1">Reply from <%= review.reply.author.name %>, the host</p>
+      <%= simple_format review.reply.comment, class: "small mb-0" %>
+    </div>
+  <% end %>
+</article>

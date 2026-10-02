@@ -13,6 +13,7 @@ class ListingsController < ApplicationController
   end
 
   def show
+    @reviews = @listing.property.reviews.includes(:author, reply: :author).recent_first
   end
 
   private

@@ -1,6 +1,8 @@
 class User < ApplicationRecord
   has_secure_password
 
+  has_many :properties, foreign_key: :host_id, inverse_of: :host, dependent: :restrict_with_error
+
   enum :role, { member: "member", moderator: "moderator" }, default: :member
   enum :status, { active: "active", suspended: "suspended" }, default: :active
 

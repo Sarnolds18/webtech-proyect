@@ -1,3 +1,15 @@
+<% content_for :title, "Properties - Roomies" %>
+
 <div class="container py-4">
-  <h1>Properties</h1>
+  <h1 class="fw-bold mb-4">Properties</h1>
+
+  <h2 class="h5 text-muted mb-3"><%= pluralize(@properties.length, "property") %></h2>
+
+  <% if @properties.present? %>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      <%= render partial: "properties/property_card", collection: @properties, as: :property %>
+    </div>
+  <% else %>
+    <p class="mb-0">There are no properties registered yet.</p>
+  <% end %>
 </div>

@@ -2,7 +2,7 @@ class PropertiesController < ApplicationController
   before_action :set_property, only: :show
 
   def index
-    @properties = Property.all
+    @properties = Property.includes(:neighborhood, :host, :listings).order(:title)
   end
 
   def show
@@ -11,6 +11,6 @@ class PropertiesController < ApplicationController
   private
 
   def set_property
-    @property = Property.find(params[:id])
+    @property = Property.includes(:neighborhood, :host, :amenities, :listings).find(params[:id])
   end
 end

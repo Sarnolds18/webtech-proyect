@@ -3,6 +3,9 @@
 <div class="col">
   <article class="card h-100 shadow-sm overflow-hidden listing-card">
     <%= image_tag listing_photo(listing), class: "card-img-top", alt: "Room in #{neighborhood.name}" %>
+    <% unless listing.published? %>
+      <span class="position-absolute top-0 start-0 m-3"><%= status_badge(listing.status) %></span>
+    <% end %>
 
     <div class="card-body d-flex flex-column p-4">
       <div class="d-flex justify-content-between align-items-center gap-2 mb-3">

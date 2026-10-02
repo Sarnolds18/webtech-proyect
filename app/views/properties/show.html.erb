@@ -1,3 +1,72 @@
+<% content_for :title, "#{@property.title} - Roomies" %>
+
 <div class="container py-4">
-  <h1>Property</h1>
+  <h1 class="fw-bold mb-2"><%= @property.title %></h1>
+  <p class="text-muted mb-4">
+    <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>
+    <%= @property.address %>,
+    <%= link_to @property.neighborhood.name, neighborhood_path(@property.neighborhood) %>,
+    <%= @property.neighborhood.city %>
+  </p>
+
+  <div class="row g-4 g-lg-5 mb-5">
+    <div class="col-lg-8">
+      <section class="mb-4" aria-labelledby="description-heading">
+        <h2 id="description-heading" class="h4 fw-bold">About this property</h2>
+        <% if @property.description.present? %>
+          <%= simple_format @property.description %>
+        <% else %>
+          <p class="text-muted">The host has not written a description yet.</p>
+        <% end %>
+      </section>
+
+      <section class="mb-4" aria-labelledby="shared-spaces-heading">
+        <h2 id="shared-spaces-heading" class="h4 fw-bold">Shared spaces</h2>
+        <% if @property.shared_spaces.present? %>
+          <%= simple_format @property.shared_spaces %>
+        <% else %>
+          <p class="text-muted">The host has not described the shared spaces yet.</p>
+        <% end %>
+      </section>
+
+      <section aria-labelledby="amenities-heading">
+        <h2 id="amenities-heading" class="h4 fw-bold">Amenities</h2>
+        <%= render "shared/amenities", amenities: @property.amenities %>
+      </section>
+    </div>
+
+    <div class="col-lg-4">
+      <section class="card shadow-sm" aria-labelledby="details-heading">
+        <div class="card-body p-4">
+          <h2 id="details-heading" class="h5 fw-bold mb-3">Details</h2>
+
+          <dl class="row mb-0">
+            <dt class="col-6 fw-normal text-muted">Type</dt>
+            <dd class="col-6 text-end"><%= @property.property_type.humanize %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Bedrooms</dt>
+            <dd class="col-6 text-end"><%= @property.bedrooms %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Bathrooms</dt>
+            <dd class="col-6 text-end"><%= @property.bathrooms %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Host</dt>
+            <dd class="col-6 text-end mb-0"><%= @property.host.name %></dd>
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section aria-labelledby="listings-heading">
+    <h2 id="listings-heading" class="h4 fw-bold mb-3">Listings in this property</h2>
+
+    <% if @property.listings.present? %>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <%= render partial: "listings/listing_card", collection: @property.listings, as: :listing %>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">This property has no listings yet.</p>
+    <% end %>
+  </section>
 </div>

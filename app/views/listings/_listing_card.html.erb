@@ -24,7 +24,7 @@
 
       <p class="pt-3 border-top mt-auto mb-0 small text-muted">
         <i class="bi bi-calendar-event me-1 text-primary" aria-hidden="true"></i>
-        Available from <strong><%= listing.available_from.strftime("%B %-d, %Y") %></strong>
+        Available from <strong><%= long_date(listing.available_from) %></strong>
       </p>
     </div>
   </article>

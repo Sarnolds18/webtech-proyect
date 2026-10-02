@@ -22,6 +22,11 @@ module ApplicationHelper
     number_to_currency(amount, unit: "$", precision: 0, delimiter: ".", format: "%u%n")
   end
 
+  # Dates as "October 7, 2026".
+  def long_date(date)
+    date.strftime("%B %-d, %Y")
+  end
+
   def listing_photo(listing)
     PLACEHOLDER_PHOTOS[listing.id % PLACEHOLDER_PHOTOS.size]
   end

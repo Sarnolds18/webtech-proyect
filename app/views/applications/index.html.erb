@@ -1,3 +1,49 @@
+<% content_for :title, "Applications - Roomies" %>
+
 <div class="container py-4">
-  <h1>Applications</h1>
+  <h1 class="fw-bold mb-4">Applications</h1>
+
+  <%= render "applications/privacy_notice" %>
+
+  <h2 class="h5 text-muted mb-3"><%= pluralize(@applications.length, "application") %></h2>
+
+  <% if @applications.present? %>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle text-nowrap mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Listing</th>
+            <th scope="col">Applicant</th>
+            <th scope="col">Status</th>
+            <th scope="col">Move-in date</th>
+            <th scope="col">Stay</th>
+            <th scope="col">Applied on</th>
+            <th scope="col"><span class="visually-hidden">Details</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @applications.each do |application| %>
+            <tr>
+              <td>
+                <%= link_to application.listing.title, listing_path(application.listing) %>
+                <span class="d-block small text-muted"><%= application.listing.property.neighborhood.name %></span>
+              </td>
+              <td><%= application.seeker.name %></td>
+              <td><%= status_badge(application.status) %></td>
+              <td><%= long_date(application.move_in_date) %></td>
+              <td><%= pluralize(application.stay_months, "month") %></td>
+              <td><%= long_date(application.created_at) %></td>
+              <td class="text-end">
+                <%= link_to application_path(application), class: "btn btn-sm btn-outline-primary" do %>
+                  View<span class="visually-hidden"> application from <%= application.seeker.name %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="mb-0">Nobody has applied to a listing yet.</p>
+  <% end %>
 </div>

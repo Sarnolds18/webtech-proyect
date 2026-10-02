@@ -1,3 +1,73 @@
+<% content_for :title, "Application to #{@application.listing.title} - Roomies" %>
+
 <div class="container py-4">
-  <h1>Application</h1>
+  <h1 class="fw-bold mb-2">Application to <%= @application.listing.title %></h1>
+  <p class="d-flex flex-wrap align-items-center gap-2 text-muted mb-4">
+    <%= status_badge(@application.status) %>
+    <span>Sent by <%= @application.seeker.name %> on <%= long_date(@application.created_at) %></span>
+  </p>
+
+  <%= render "applications/privacy_notice" %>
+
+  <div class="row g-4 g-lg-5">
+    <div class="col-lg-8">
+      <section class="mb-4" aria-labelledby="message-heading">
+        <h2 id="message-heading" class="h4 fw-bold">Message</h2>
+        <%= simple_format @application.message %>
+      </section>
+
+      <section aria-labelledby="visits-heading">
+        <h2 id="visits-heading" class="h4 fw-bold">Visits</h2>
+
+        <% if @visits.present? %>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">Date and time</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @visits.each do |visit| %>
+                  <tr>
+                    <td><%= long_date(visit.scheduled_at) %> at <%= visit.scheduled_at.strftime("%H:%M") %></td>
+                    <td><%= status_badge(visit.status) %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted mb-0">No visit has been proposed for this application yet.</p>
+        <% end %>
+      </section>
+    </div>
+
+    <div class="col-lg-4">
+      <section class="card shadow-sm mb-4" aria-labelledby="details-heading">
+        <div class="card-body p-4">
+          <h2 id="details-heading" class="h5 fw-bold mb-3">Details</h2>
+
+          <dl class="row mb-0">
+            <dt class="col-6 fw-normal text-muted">Applicant</dt>
+            <dd class="col-6 text-end"><%= @application.seeker.name %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Move-in date</dt>
+            <dd class="col-6 text-end"><%= long_date(@application.move_in_date) %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Intended stay</dt>
+            <dd class="col-6 text-end mb-0"><%= pluralize(@application.stay_months, "month") %></dd>
+          </dl>
+        </div>
+      </section>
+
+      <section aria-labelledby="listing-heading">
+        <h2 id="listing-heading" class="h5 fw-bold mb-3">The listing</h2>
+        <div class="row row-cols-1">
+          <%= render "listings/listing_card", listing: @application.listing %>
+        </div>
+      </section>
+    </div>
+  </div>
 </div>

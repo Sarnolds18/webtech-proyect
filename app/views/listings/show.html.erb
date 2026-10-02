@@ -56,7 +56,7 @@
             <dd class="col-6 text-end"><%= money(@listing.deposit) %></dd>
 
             <dt class="col-6 fw-normal text-muted">Available from</dt>
-            <dd class="col-6 text-end"><%= @listing.available_from.strftime("%B %-d, %Y") %></dd>
+            <dd class="col-6 text-end"><%= long_date(@listing.available_from) %></dd>
 
             <dt class="col-6 fw-normal text-muted">Minimum stay</dt>
             <dd class="col-6 text-end"><%= pluralize(@listing.minimum_stay_months, "month") %></dd>

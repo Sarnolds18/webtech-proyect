@@ -1,6 +1,8 @@
 class Listing < ApplicationRecord
   belongs_to :property
   has_one :neighborhood, through: :property
+  has_many :applications, dependent: :destroy
+  has_many :seekers, through: :applications
 
   enum :status, {
     draft: "draft",

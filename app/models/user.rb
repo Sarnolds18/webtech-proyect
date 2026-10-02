@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :properties, foreign_key: :host_id, inverse_of: :host, dependent: :restrict_with_error
+  has_many :applications, foreign_key: :seeker_id, inverse_of: :seeker, dependent: :destroy
 
   enum :role, { member: "member", moderator: "moderator" }, default: :member
   enum :status, { active: "active", suspended: "suspended" }, default: :active

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_132526) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_133415) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -21,6 +21,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_132526) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_amenities_on_name", unique: true
+  end
+
+  create_table "applications", force: :cascade do |t|
+    t.bigint "listing_id", null: false
+    t.bigint "seeker_id", null: false
+    t.text "message", null: false
+    t.date "move_in_date", null: false
+    t.integer "stay_months", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["listing_id", "seeker_id"], name: "index_applications_on_listing_id_and_seeker_id", unique: true
+    t.index ["listing_id"], name: "index_applications_on_listing_id"
+    t.index ["listing_id"], name: "index_applications_one_accepted_per_listing", unique: true, where: "((status)::text = 'accepted'::text)"
+    t.index ["seeker_id"], name: "index_applications_on_seeker_id"
+    t.index ["status"], name: "index_applications_on_status"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::text, 'shortlisted'::text, 'accepted'::text, 'rejected'::text, 'withdrawn'::text])", name: "applications_status_valid"
+    t.check_constraint "stay_months >= 1", name: "applications_stay_positive"
   end
 
   create_table "listings", force: :cascade do |t|
@@ -44,7 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_132526) do
     t.check_constraint "deposit >= 0", name: "listings_deposit_not_negative"
     t.check_constraint "minimum_stay_months >= 1", name: "listings_minimum_stay_positive"
     t.check_constraint "monthly_rent > 0", name: "listings_rent_positive"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'published'::character varying::text, 'reserved'::character varying::text, 'rented'::character varying::text, 'withdrawn'::character varying::text])", name: "listings_status_valid"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::text, 'published'::text, 'reserved'::text, 'rented'::text, 'withdrawn'::text])", name: "listings_status_valid"
   end
 
   create_table "neighborhoods", force: :cascade do |t|
@@ -72,7 +90,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_132526) do
     t.index ["neighborhood_id"], name: "index_properties_on_neighborhood_id"
     t.check_constraint "bathrooms >= 1", name: "properties_bathrooms_positive"
     t.check_constraint "bedrooms >= 1", name: "properties_bedrooms_positive"
-    t.check_constraint "property_type::text = ANY (ARRAY['apartment'::character varying::text, 'house'::character varying::text, 'studio'::character varying::text])", name: "properties_type_valid"
+    t.check_constraint "property_type::text = ANY (ARRAY['apartment'::text, 'house'::text, 'studio'::text])", name: "properties_type_valid"
   end
 
   create_table "property_amenities", force: :cascade do |t|
@@ -96,10 +114,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_132526) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
-    t.check_constraint "role::text = ANY (ARRAY['member'::character varying::text, 'moderator'::character varying::text])", name: "users_role_valid"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'suspended'::character varying::text])", name: "users_status_valid"
+    t.check_constraint "role::text = ANY (ARRAY['member'::text, 'moderator'::text])", name: "users_role_valid"
+    t.check_constraint "status::text = ANY (ARRAY['active'::text, 'suspended'::text])", name: "users_status_valid"
   end
 
+  add_foreign_key "applications", "listings"
+  add_foreign_key "applications", "users", column: "seeker_id"
   add_foreign_key "listings", "properties"
   add_foreign_key "properties", "neighborhoods"
   add_foreign_key "properties", "users", column: "host_id"

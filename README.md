@@ -32,6 +32,15 @@ webtech-proyect/
 - **Domain model**: [`domain-model.dbml`](./docs/domain-model.dbml) (source) and [`domain-model.png`](./docs/domain-model.png) (diagram). Open the `.dbml` file's contents in [dbdiagram.io](https://dbdiagram.io) to view or edit it interactively.
 - **Design decisions**: [`design-decisions.md`](./docs/design-decisions.md) — explains entities added beyond the project description, the lifecycle of listings and applications, and modeling assumptions.
 
+## After Pulling Changes
+
+Run these two commands every time you pull, before starting the application:
+
+```bash
+bundle install        # installs any gem that was added or updated in Gemfile.lock
+bin/rails db:migrate  # applies any new migration
+```
+
 ## Course
 
 Web Technologies — 2026

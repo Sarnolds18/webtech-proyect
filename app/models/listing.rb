@@ -4,6 +4,10 @@ class Listing < ApplicationRecord
   has_many :applications, dependent: :destroy
   has_many :seekers, through: :applications
   has_many :reviews, through: :property
+  has_many :saved_listings, dependent: :destroy
+  has_many :savers, through: :saved_listings, source: :user
+  has_many :reports, dependent: :destroy
+  has_many :moderation_actions, foreign_key: :target_listing_id, inverse_of: :target_listing, dependent: :nullify
 
   enum :status, {
     draft: "draft",

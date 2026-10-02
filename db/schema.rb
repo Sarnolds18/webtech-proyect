@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_134635) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_135434) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,6 +65,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_134635) do
     t.check_constraint "status::text = ANY (ARRAY['draft'::text, 'published'::text, 'reserved'::text, 'rented'::text, 'withdrawn'::text])", name: "listings_status_valid"
   end
 
+  create_table "moderation_actions", force: :cascade do |t|
+    t.bigint "moderator_id", null: false
+    t.bigint "report_id"
+    t.bigint "target_listing_id"
+    t.bigint "target_user_id"
+    t.string "action_type", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["moderator_id"], name: "index_moderation_actions_on_moderator_id"
+    t.index ["report_id"], name: "index_moderation_actions_on_report_id"
+    t.index ["target_listing_id"], name: "index_moderation_actions_on_target_listing_id"
+    t.index ["target_user_id"], name: "index_moderation_actions_on_target_user_id"
+    t.check_constraint "action_type::text = ANY (ARRAY['dismiss_report'::text, 'withdraw_listing'::text, 'remove_review'::text, 'suspend_user'::text])", name: "moderation_actions_type_valid"
+  end
+
   create_table "neighborhoods", force: :cascade do |t|
     t.string "name", null: false
     t.string "city", null: false
@@ -103,6 +119,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_134635) do
     t.index ["property_id"], name: "index_property_amenities_on_property_id"
   end
 
+  create_table "reports", force: :cascade do |t|
+    t.bigint "listing_id", null: false
+    t.bigint "reporter_id", null: false
+    t.string "reason", null: false
+    t.text "details"
+    t.string "status", default: "open", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["listing_id", "reporter_id"], name: "index_reports_on_listing_id_and_reporter_id", unique: true
+    t.index ["listing_id"], name: "index_reports_on_listing_id"
+    t.index ["reporter_id"], name: "index_reports_on_reporter_id"
+    t.index ["status"], name: "index_reports_on_status"
+    t.check_constraint "reason::text = ANY (ARRAY['fraudulent'::text, 'misleading'::text, 'offensive'::text])", name: "reports_reason_valid"
+    t.check_constraint "status::text = ANY (ARRAY['open'::text, 'dismissed'::text, 'action_taken'::text])", name: "reports_status_valid"
+  end
+
   create_table "review_replies", force: :cascade do |t|
     t.bigint "review_id", null: false
     t.bigint "author_id", null: false
@@ -125,6 +157,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_134635) do
     t.index ["property_id"], name: "index_reviews_on_property_id"
     t.index ["visit_id"], name: "index_reviews_on_visit_id", unique: true
     t.check_constraint "rating >= 1 AND rating <= 5", name: "reviews_rating_range"
+  end
+
+  create_table "saved_listings", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "listing_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["listing_id"], name: "index_saved_listings_on_listing_id"
+    t.index ["user_id", "listing_id"], name: "index_saved_listings_on_user_id_and_listing_id", unique: true
+    t.index ["user_id"], name: "index_saved_listings_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -155,14 +197,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_134635) do
   add_foreign_key "applications", "listings"
   add_foreign_key "applications", "users", column: "seeker_id"
   add_foreign_key "listings", "properties"
+  add_foreign_key "moderation_actions", "listings", column: "target_listing_id"
+  add_foreign_key "moderation_actions", "reports"
+  add_foreign_key "moderation_actions", "users", column: "moderator_id"
+  add_foreign_key "moderation_actions", "users", column: "target_user_id"
   add_foreign_key "properties", "neighborhoods"
   add_foreign_key "properties", "users", column: "host_id"
   add_foreign_key "property_amenities", "amenities"
   add_foreign_key "property_amenities", "properties"
+  add_foreign_key "reports", "listings"
+  add_foreign_key "reports", "users", column: "reporter_id"
   add_foreign_key "review_replies", "reviews"
   add_foreign_key "review_replies", "users", column: "author_id"
   add_foreign_key "reviews", "properties"
   add_foreign_key "reviews", "users", column: "author_id"
   add_foreign_key "reviews", "visits"
+  add_foreign_key "saved_listings", "listings"
+  add_foreign_key "saved_listings", "users"
   add_foreign_key "visits", "applications"
 end

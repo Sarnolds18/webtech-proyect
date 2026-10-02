@@ -2,28 +2,6 @@
   <div class="container">
     <h2 id="search-heading" class="fw-bold mb-4">Search rooms</h2>
 
-    <%= form_with url: listings_path, method: :get, class: "row g-3 align-items-end" do |form| %>
-      <div class="col-md-4">
-        <%= form.label :neighborhood_id, "Neighborhood", class: "form-label" %>
-        <%= form.select :neighborhood_id,
-              options_from_collection_for_select(neighborhoods, :id, :name, params[:neighborhood_id]),
-              { include_blank: "Any neighborhood" }, class: "form-select" %>
-      </div>
-
-      <div class="col-md-4">
-        <%= form.label :max_rent, "Maximum rent", class: "form-label" %>
-        <%= form.number_field :max_rent, value: params[:max_rent], min: 0, step: 10_000,
-              placeholder: "e.g. 350000", class: "form-control" %>
-      </div>
-
-      <div class="col-md-4">
-        <%= form.label :available_from, "Available from", class: "form-label" %>
-        <%= form.date_field :available_from, value: params[:available_from], class: "form-control" %>
-      </div>
-
-      <div class="col-12">
-        <%= form.submit "Search rooms", name: nil, class: "btn btn-primary" %>
-      </div>
-    <% end %>
+    <%= render "shared/search_form", neighborhoods: neighborhoods %>
   </div>
 </section>

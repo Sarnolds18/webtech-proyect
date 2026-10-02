@@ -1,3 +1,27 @@
+<% content_for :title, "Rooms available - Roomies" %>
+<% filtered = params.values_at(:neighborhood_id, :max_rent, :available_from).any?(&:present?) %>
+
 <div class="container py-4">
-  <h1>Listings</h1>
+  <h1 class="fw-bold mb-4">Rooms available</h1>
+
+  <section class="mb-5" aria-labelledby="filters-heading">
+    <h2 id="filters-heading" class="visually-hidden">Filter rooms</h2>
+    <%= render "shared/search_form", neighborhoods: @neighborhoods %>
+  </section>
+
+  <section aria-labelledby="results-heading">
+    <h2 id="results-heading" class="h5 text-muted mb-3"><%= pluralize(@listings.length, "room") %> found</h2>
+
+    <% if @listings.present? %>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <%= render partial: "listings/listing_card", collection: @listings, as: :listing %>
+      </div>
+    <% elsif filtered %>
+      <p class="mb-0">
+        No rooms match your search. <%= link_to "Clear the filters", listings_path %> to see every room.
+      </p>
+    <% else %>
+      <p class="mb-0">There are no rooms published right now. Check back soon.</p>
+    <% end %>
+  </section>
 </div>

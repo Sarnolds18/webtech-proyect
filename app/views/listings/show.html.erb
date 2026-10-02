@@ -1,3 +1,103 @@
+<% content_for :title, "#{@listing.title} - Roomies" %>
+<% property = @listing.property %>
+
 <div class="container py-4">
-  <h1>Listing</h1>
+  <div class="row g-4 g-lg-5">
+    <div class="col-lg-8">
+      <div class="ratio ratio-16x9 mb-4">
+        <%= image_tag listing_photo(@listing), class: "object-fit-cover rounded-3",
+              alt: "Room in #{property.neighborhood.name}" %>
+      </div>
+
+      <h1 class="fw-bold mb-2"><%= @listing.title %></h1>
+      <p class="d-flex flex-wrap align-items-center gap-2 text-muted mb-4">
+        <%= status_badge(@listing.status) %>
+        <span>
+          <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>
+          <%= link_to property.neighborhood.name, neighborhood_path(property.neighborhood) %>,
+          <%= property.neighborhood.city %>
+        </span>
+      </p>
+
+      <section class="mb-4" aria-labelledby="description-heading">
+        <h2 id="description-heading" class="h4 fw-bold">About this room</h2>
+        <% if @listing.description.present? %>
+          <%= simple_format @listing.description %>
+        <% else %>
+          <p class="text-muted">The host has not written a description yet.</p>
+        <% end %>
+      </section>
+
+      <section class="mb-4" aria-labelledby="house-rules-heading">
+        <h2 id="house-rules-heading" class="h4 fw-bold">House rules</h2>
+        <% if @listing.house_rules.present? %>
+          <%= simple_format @listing.house_rules %>
+        <% else %>
+          <p class="text-muted">The host has not written any house rules yet.</p>
+        <% end %>
+      </section>
+
+      <section aria-labelledby="amenities-heading">
+        <h2 id="amenities-heading" class="h4 fw-bold">Amenities of the property</h2>
+        <% if property.amenities.present? %>
+          <ul class="list-unstyled d-flex flex-wrap gap-2 mb-0">
+            <% property.amenities.each do |amenity| %>
+              <li class="badge text-bg-light border fw-normal fs-6 px-3 py-2">
+                <% if amenity.icon.present? %>
+                  <i class="bi <%= amenity.icon %> me-1" aria-hidden="true"></i>
+                <% end %>
+                <%= amenity.name %>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="text-muted mb-0">This property has no amenities listed.</p>
+        <% end %>
+      </section>
+    </div>
+
+    <div class="col-lg-4">
+      <section class="card shadow-sm mb-4" aria-labelledby="summary-heading">
+        <div class="card-body p-4">
+          <h2 id="summary-heading" class="visually-hidden">Rent and conditions</h2>
+          <p class="fs-3 fw-bold text-success mb-3">
+            <%= money(@listing.monthly_rent) %> <small class="fs-6 text-muted fw-normal">/ month</small>
+          </p>
+
+          <dl class="row mb-0">
+            <dt class="col-6 fw-normal text-muted">Deposit</dt>
+            <dd class="col-6 text-end"><%= money(@listing.deposit) %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Available from</dt>
+            <dd class="col-6 text-end"><%= @listing.available_from.strftime("%B %-d, %Y") %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Minimum stay</dt>
+            <dd class="col-6 text-end"><%= pluralize(@listing.minimum_stay_months, "month") %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Furnished</dt>
+            <dd class="col-6 text-end"><%= yes_no(@listing.furnished) %></dd>
+
+            <dt class="col-6 fw-normal text-muted">Private bathroom</dt>
+            <dd class="col-6 text-end mb-0"><%= yes_no(@listing.private_bathroom) %></dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card shadow-sm" aria-labelledby="property-heading">
+        <div class="card-body p-4">
+          <h2 id="property-heading" class="h5 fw-bold">The property</h2>
+          <p class="mb-1"><%= link_to property.title, property_path(property), class: "fw-semibold" %></p>
+          <p class="text-muted small mb-3">
+            <%= property.address %>, <%= property.neighborhood.name %>
+          </p>
+
+          <ul class="list-unstyled mb-0">
+            <li><i class="bi bi-building me-2" aria-hidden="true"></i><%= property.property_type.humanize %></li>
+            <li><i class="bi bi-door-closed me-2" aria-hidden="true"></i><%= pluralize(property.bedrooms, "bedroom") %></li>
+            <li><i class="bi bi-droplet me-2" aria-hidden="true"></i><%= pluralize(property.bathrooms, "bathroom") %></li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
 </div>

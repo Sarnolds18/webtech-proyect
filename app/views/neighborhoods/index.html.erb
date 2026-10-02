@@ -1,3 +1,31 @@
+<% content_for :title, "Neighborhoods - Roomies" %>
+
 <div class="container py-4">
-  <h1>Neighborhoods</h1>
+  <h1 class="fw-bold mb-4">Neighborhoods</h1>
+
+  <h2 class="h5 text-muted mb-3"><%= pluralize(@neighborhoods.length, "neighborhood") %></h2>
+
+  <% if @neighborhoods.present? %>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+      <% @neighborhoods.each do |neighborhood| %>
+        <div class="col">
+          <article class="card h-100 shadow-sm">
+            <div class="card-body p-4">
+              <h3 class="card-title h5 fw-bold mb-1">
+                <%= link_to neighborhood.name, neighborhood_path(neighborhood),
+                      class: "stretched-link text-decoration-none text-dark" %>
+              </h3>
+              <p class="card-text text-secondary small mb-3"><%= neighborhood.city %></p>
+              <p class="mb-0 small text-muted">
+                <i class="bi bi-door-open me-1 text-primary" aria-hidden="true"></i>
+                <%= pluralize(@published_counts.fetch(neighborhood.id, 0), "room") %> available
+              </p>
+            </div>
+          </article>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="mb-0">There are no neighborhoods in the catalog yet.</p>
+  <% end %>
 </div>

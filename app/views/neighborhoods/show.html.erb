@@ -1,3 +1,41 @@
+<% content_for :title, "#{@neighborhood.name} - Roomies" %>
+
 <div class="container py-4">
-  <h1>Neighborhood</h1>
+  <h1 class="fw-bold mb-2"><%= @neighborhood.name %></h1>
+  <p class="text-muted mb-4">
+    <i class="bi bi-geo-alt me-1" aria-hidden="true"></i><%= @neighborhood.city %>
+  </p>
+
+  <% unless @neighborhood.active? %>
+    <p class="alert alert-secondary" role="note">
+      This neighborhood is no longer active in the catalog, so it is not offered as a search filter.
+    </p>
+  <% end %>
+
+  <section class="mb-5" aria-labelledby="listings-heading">
+    <h2 id="listings-heading" class="h4 fw-bold mb-3">Available rooms</h2>
+
+    <% if @listings.present? %>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <%= render partial: "listings/listing_card", collection: @listings, as: :listing %>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">
+        There are no rooms published in this neighborhood right now.
+        <%= link_to "Browse every room", listings_path %>.
+      </p>
+    <% end %>
+  </section>
+
+  <section aria-labelledby="properties-heading">
+    <h2 id="properties-heading" class="h4 fw-bold mb-3">Properties</h2>
+
+    <% if @properties.present? %>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <%= render partial: "properties/property_card", collection: @properties, as: :property %>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">There are no properties registered in this neighborhood yet.</p>
+    <% end %>
+  </section>
 </div>

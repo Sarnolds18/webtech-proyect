@@ -1,0 +1,36 @@
+<%
+  steps = [
+    [ "Publish or Search",
+      "Post an available room in your home or browse listings filtered by location, price, and availability." ],
+    [ "Apply",
+      "Send an application introducing yourself to potential roommates or review incoming requests." ],
+    [ "Visit",
+      "Schedule a tour to check out the place and meet your future housemates." ],
+    [ "Move In",
+      "Finalize the details, sign the agreement, collect the keys, and settle into your new home." ]
+  ]
+%>
+<section id="how-it-works" class="py-5 bg-light border-top" aria-labelledby="how-it-works-heading">
+  <div class="container py-4">
+    <div class="text-center mb-5">
+      <h2 id="how-it-works-heading" class="fw-bold mb-2">How it works</h2>
+      <p class="text-muted col-lg-6 mx-auto">
+        Finding or listing a room on Roomies is simple and straightforward.
+      </p>
+    </div>
+
+    <ol class="row g-4 list-unstyled mb-0">
+      <% steps.each.with_index(1) do |(title, text), number| %>
+        <li class="col-md-6 col-lg-3">
+          <div class="h-100 text-center p-3">
+            <span class="step-number d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle fs-4 fw-bold mb-3" aria-hidden="true">
+              <%= number %>
+            </span>
+            <h3 class="h5 fw-bold mb-2"><%= title %></h3>
+            <p class="text-secondary small mb-0"><%= text %></p>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+</section>

@@ -1,0 +1,19 @@
+<section id="featured" class="py-5 bg-white" aria-labelledby="featured-heading">
+  <div class="container">
+    <div class="mb-4">
+      <h2 id="featured-heading" class="fw-bold mb-1">Featured rooms</h2>
+      <p class="text-muted mb-0">The published rooms that become available soonest</p>
+    </div>
+
+    <% if listings.present? %>
+      <div class="row row-cols-1 row-cols-md-3 g-4">
+        <%= render partial: "listings/listing_card", collection: listings, as: :listing %>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">
+        There are no rooms published right now. Check back soon, or
+        <%= link_to "browse all rooms", listings_path %>.
+      </p>
+    <% end %>
+  </div>
+</section>

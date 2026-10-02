@@ -4,6 +4,7 @@ class Property < ApplicationRecord
 
   has_many :property_amenities, dependent: :destroy
   has_many :amenities, through: :property_amenities
+  has_many :listings, dependent: :restrict_with_error
 
   enum :property_type, { apartment: "apartment", house: "house", studio: "studio" }
 

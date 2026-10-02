@@ -11,7 +11,16 @@
       <div class="collapse navbar-collapse" id="navbarMain">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
           <li class="nav-item">
-            <%= link_to "Search", root_path(anchor: "search"), class: "nav-link" %>
+            <%= nav_link_to "Search", listings_path %>
+          </li>
+          <li class="nav-item">
+            <%= nav_link_to "Neighborhoods", neighborhoods_path %>
+          </li>
+          <li class="nav-item">
+            <%= nav_link_to "Properties", properties_path %>
+          </li>
+          <li class="nav-item">
+            <%= nav_link_to "Applications", applications_path %>
           </li>
           <li class="nav-item">
             <%= link_to "Publish a Room", "#", class: "nav-link" %>

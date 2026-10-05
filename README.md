@@ -48,7 +48,7 @@ webtech-proyect/
 ### Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Sarnolds18/webtech-proyect.git
 cd webtech-proyect
 
 bundle install                 # install gems

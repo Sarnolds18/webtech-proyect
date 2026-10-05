@@ -4,30 +4,44 @@ Reasoning behind the model in [`domain-model.dbml`](./domain-model.dbml).
 
 ## Entities not named explicitly in the description
 
-- **`property_photos` / `listing_photos`** — split into two galleries (common areas vs. the specific room) instead of one generic table.
-- **`listing_amenities`** — a pure join table for the listing↔amenity many-to-many.
-- **`visits`** — "arranging a visit" implies its own lifecycle and timestamps, distinct from the application; it also anchors review eligibility.
-- **`review_replies`** — lets a host respond to a review, as its own table so author/timestamp aren't ambiguous.
-- **`reports` vs. `moderation_actions`** — a report says *why* something looks wrong; an action log says *what a moderator did*, kept separate since not every action stems from a report, and story 7.8 asks for a traceable history.
-- **`neighborhoods` / `amenities` as catalogs**, not free text, since moderators explicitly manage them.
+- **`property_amenities`** — pure join table for the properties↔amenities many-to-many. Amenities describe the home, so they hang from the property, not from each listing.
+- **`visits`** — "arranging a visit" has its own lifecycle and timestamps, distinct from the application; a completed visit also anchors review eligibility.
+- **`review_replies`** — lets a host answer a review, as its own table so author and timestamp are unambiguous (one reply per review).
+- **`saved_listings`** — join table for the users↔listings many-to-many.
+- **`reports` vs. `moderation_actions`** — a report says *why* a listing looks wrong; an action log says *what a moderator did*. They are separate because not every action stems from a report, and moderation must be traceable.
+- **`neighborhoods` / `amenities` as catalogs**, not free text, because moderators manage them. They are deactivated (`active = false`), never deleted.
 
 ## Lifecycle of a listing
 
-`draft → active → paused → closed`, with `removed` reachable from any state via moderation. `draft` is prep-only (1.5); `active` is searchable; `paused` hides it without deleting (1.7); `closed` fires automatically when a host accepts an applicant (4.6), which also auto-rejects the rest; `removed` is moderator-driven (7.4), kept distinct from `closed` so "filled" and "taken down" don't look the same in an audit. A single `status` column was enough since no story asks for a visible status-change timeline.
+`draft → published → reserved → rented`, with `withdrawn` reachable from any state (by the host or a moderator), which voids pending applications. Stored as one `status` enum column. `reserved` is set automatically when the host accepts an applicant; `rented` when the new housemate moves in. `withdrawn` stays distinct from `rented` so "filled" and "taken down" never look alike.
 
 ## Lifecycle of an application
 
-`pending → shortlisted → visit_scheduled → accepted / rejected`, with `withdrawn` reachable any time by the seeker (3.3). `visit_scheduled` is set once a `visits` row exists; the visit's own status tracks proposed/confirmed/completed so the application doesn't duplicate that detail. `accepted` (4.5) triggers the listing's closing and the auto-rejection cascade. An application is its own entity — not a bare link table — because it carries a `message`, `applied_at`, and this status; a unique `(listing_id, seeker_id)` index enforces "no duplicate active applications" (3.4).
+`pending → shortlisted → accepted / rejected`, with `withdrawn` available to the seeker while `pending` or `shortlisted`. Visit progress is **not** duplicated here: it lives in `visits` (`proposed → confirmed → completed`, or `cancelled`). An application is its own entity — not a bare link — because it carries a message, a desired move-in date, a stay length, and its own status. Accepting one application is atomic: it becomes `accepted`, every other open application of the listing becomes `rejected`, and the listing becomes `reserved`. A unique `(listing_id, seeker_id)` index blocks duplicate applications, and a partial unique index on `listing_id WHERE status = 'accepted'` makes two accepted applications impossible at the database level.
 
 ## Assumptions
 
-- A property can hold several listings, but each listing belongs to exactly one property (rooms are the unit applied to).
-- Reviews are tied to the **property** via the completed `visit` that grants eligibility, not freely to any past interaction.
-- Host/seeker are not stored as an account type — any `member` can do both (8.4); `moderator` is the one privileged role kept as an explicit flag.
-- A visit is 1-to-1 with its application; redoing a visit updates the same row rather than creating a new one.
-- Saved listings carry no metadata beyond a timestamp.
-- A report always targets a listing (the only reportable object named in the brief); action against a user is recorded on `moderation_actions`, not on the report itself.
+- A property can hold several listings; each listing belongs to exactly one property (the room is the unit applied to).
+- A host or seeker is not an account type: any `member` can be both. `moderator` is the only privileged role; `visitor` is simply being signed out. `users.status` (`active`/`suspended`) supports account suspension.
+- Reviews belong to the **property**, granted by a **completed visit** (`reviews.visit_id` is unique: one review per visit). `property_id` is denormalized onto the review so a property's reviews can be listed directly.
+- A host cannot review their own property, and only the host can reply to a review of it.
+- An application can have several visits (the host can cancel one and propose another).
+- A report always targets a listing, and a member reports a given listing once. Actions against a user or a review are recorded in `moderation_actions`; a removed review is described in `notes`, since its row is deleted.
+- Photos and rich text (description, house rules) are handled by Active Storage and Action Text in Assignment 3, so there are no photo tables.
 
-## Why the landing page keeps 4 "how it works" steps instead of 3
+## What changed since Assignment 1
 
-The brief describes the process as three steps — *"publish or search, apply, visit and move in"* — with the last one written as a single combined step. We kept **Visit** and **Move In** as two separate cards on the landing page instead of merging them, because they are distinct moments in the domain model with their own state: a `visit` (proposed/confirmed/completed) happens before a decision is made, while moving in only follows the `accepted` application status and the listing's `closed` transition. Collapsing them into one card would hide that an applicant can be rejected after a visit and before moving in — a real outcome the application lifecycle explicitly supports (an `accepted` applicant moves in; every other visited applicant is auto-`rejected`). We judged that showing this distinction on the homepage sets more accurate expectations for a first-time visitor than following the brief's wording literally, at the cost of a minor deviation from the exact "three steps" phrasing.
+Writing the models showed the first diagram was heavier than the domain needs:
+
+| Assignment 1 | Now | Why |
+|---|---|---|
+| `property_photos`, `listing_photos` | removed | Active Storage attachments replace them; no custom tables needed. |
+| `listing_amenities` | `property_amenities` | Amenities are a trait of the home, shared by all its rooms. |
+| Listing `draft/active/paused/closed/removed` | `draft/published/reserved/rented/withdrawn` | Matches the project description; "paused" and "removed" collapse into `withdrawn`, and `reserved`/`rented` separate "accepted" from "moved in". |
+| Application `…/visit_scheduled/…`, `applied_at` | status without `visit_scheduled`; `created_at` | Visit progress belongs to `visits`; the creation timestamp is the application date. |
+| Visit 1-to-1 with application | many visits per application | Redoing a cancelled visit keeps the history. |
+| — | `users.status`, `reports.reason/status` enums, DB `CHECK` constraints, partial unique index | Support suspension, moderation queues, and enforce business rules in the database. |
+
+## Why the landing page keeps 4 "how it works" steps
+
+The brief describes three steps — *publish or search, apply, visit and move in* — with the last one combined. The landing page keeps **Visit** and **Move in** as separate cards because they are distinct moments with their own state: a visit (`proposed/confirmed/completed`) happens before the decision, while moving in only follows an `accepted` application and a `reserved` listing. Merging them would hide that an applicant can be rejected after a visit. This is a minor, deliberate deviation from the brief's wording.

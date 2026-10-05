@@ -29,7 +29,7 @@ Some stories apply to any signed-in member regardless of the role they are playi
 
 1.6. As a **host**, I want to **edit a listing's information after publishing it**, so that **I can correct mistakes or update the rent and availability**.
 
-1.7. As a **host**, I want to **pause or close a listing**, so that **it stops appearing in search results once the room is no longer available**.
+1.7. As a **host**, I want to **withdraw a listing**, so that **it stops appearing in search results once the room is no longer available**.
 
 1.8. As a **host**, I want to **see a list of all my properties and their listings in one place**, so that **I can manage everything I have published**.
 
@@ -37,7 +37,7 @@ Some stories apply to any signed-in member regardless of the role they are playi
 
 ## 2. Searching and Browsing Listings
 
-2.1. As a **visitor**, I want to **browse active listings without creating an account**, so that **I can explore what's available before deciding to sign up**.
+2.1. As a **visitor**, I want to **browse published listings without creating an account**, so that **I can explore what's available before deciding to sign up**.
 
 2.2. As a **visitor**, I want to **filter listings by neighborhood, maximum rent, and availability date**, so that **I can narrow down results to what fits my needs**.
 
@@ -55,7 +55,7 @@ Some stories apply to any signed-in member regardless of the role they are playi
 
 3.1. As a **seeker**, I want to **apply to a listing with a short message to the host**, so that **I can introduce myself and express interest in the room**.
 
-3.2. As a **seeker**, I want to **see the current status of each application I've sent (pending, shortlisted, visit scheduled, accepted, rejected, withdrawn)**, so that **I know where I stand with each listing**.
+3.2. As a **seeker**, I want to **see the current status of each application I've sent (pending, shortlisted, accepted, rejected, withdrawn)**, so that **I know where I stand with each listing**.
 
 3.3. As a **seeker**, I want to **withdraw an application I previously sent**, so that **I can back out if I'm no longer interested or already found a room**.
 
@@ -115,7 +115,7 @@ Some stories apply to any signed-in member regardless of the role they are playi
 
 7.3. As a **moderator**, I want to **dismiss a report that turns out to be unfounded**, so that **the listing keeps operating normally and the report is closed**.
 
-7.4. As a **moderator**, I want to **suspend or remove a listing that violates platform rules**, so that **it stops being visible to seekers**.
+7.4. As a **moderator**, I want to **withdraw a listing that violates platform rules**, so that **it stops being visible to seekers**.
 
 7.5. As a **moderator**, I want to **suspend a member's account in cases of repeated or serious violations**, so that **I can protect the integrity of the platform**.
 

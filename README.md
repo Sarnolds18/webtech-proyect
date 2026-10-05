@@ -23,17 +23,18 @@ webtech-proyect/
 │   ├── migrate/
 │   ├── schema.rb
 │   └── seeds.rb              #   sample data for every table
-├── test/                     # Rails tests
-├── landing/                  # Assignment 1 — static landing page (now the app's root page)
+├── test/
+│   └── models/               #   model tests (validations, scopes, database constraints)
+├── landing/                  # Assignment 1 — static landing page (kept as history; `/` is now its Rails version)
 │   ├── index.html
 │   ├── css/
 │   │   └── styles.css
 │   └── assets/                # images used by the landing page
 ├── docs/
 │   ├── USER_STORIES.md       # Assignment 1 — user stories (visitor, member, moderator)
-│   ├── domain-model.dbml     # Assignment 1 — domain model source (dbdiagram.io / DBML format)
-│   ├── domain-model.png      # Assignment 1 — domain model diagram (exported image)
-│   └── design-decisions.md   # Assignment 1 — modeling decisions and assumptions
+│   ├── domain-model.dbml     # domain model source (dbdiagram.io / DBML format), updated in Assignment 2
+│   ├── domain-model.png      # domain model diagram (exported image), updated in Assignment 2
+│   └── design-decisions.md   # modeling decisions, and what changed since Assignment 1
 └── README.md                 # this file
 ```
 
@@ -64,6 +65,16 @@ bin/dev
 ```
 
 `bin/dev` starts the Rails server and the CSS watcher together. Then open <http://localhost:3000>.
+
+### Run the tests
+
+```bash
+bin/rails test
+```
+
+The model tests cover validations, enums, scopes and database constraints (for example, only one accepted application per listing).
+
+### Reset the data
 
 To reset the database to its initial sample data at any time:
 
@@ -120,6 +131,8 @@ The application is **read-only** in Assignment 2: nothing can be created, edited
 
 - **Models**: 13 Active Record models with associations (including the many-to-many ones), validations, enums, scopes and database constraints. See [`db/schema.rb`](./db/schema.rb).
 - **Read-only views**: index and show pages for listings, properties, neighborhoods and applications, with a shared layout, partials and Bootstrap 5.
+- **Domain model update**: the diagram and [`design-decisions.md`](./docs/design-decisions.md) were updated; its section *What changed since Assignment 1* explains each change.
+- **Model tests**: [`test/models`](./test/models) — run them with `bin/rails test`.
 - **Seeds**: [`db/seeds.rb`](./db/seeds.rb) populates every table with realistic Santiago data: listings in every lifecycle state, applications in every status, completed visits, reviews with host replies, saved listings, reports and moderation actions.
 
 The static landing page in [`landing/`](./landing) is kept as history; the app's root page (`/`) is now its Rails version.

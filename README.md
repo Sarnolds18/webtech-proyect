@@ -117,7 +117,7 @@ The application is **read-only** in Assignment 2: nothing can be created, edited
 ### Common problems
 
 - **PostgreSQL is not running**: start it with `sudo service postgresql start`.
-- **`yarn: command not found`**: run `corepack enable` (or `npm install -g yarn`).
+- **`yarn: command not found`** or **`cssbundling-rails: No suitable tool found for installing JavaScript dependencies`**: install Yarn with `npm install -g yarn`, then run `yarn install`. (`corepack enable` also works, but only on Node.js 24 or older: Node.js 25 stopped shipping Corepack.)
 - **Ruby version mismatch**: install the version in `.ruby-version`, e.g. `rbenv install 4.0.4`.
 
 ## Assignment 1 — User Stories, Domain Model, and Landing Page

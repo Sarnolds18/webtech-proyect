@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "home#index"
 
+  # No login until Assignment 4: the navbar selector picks the user every action is made as.
+  resource :acting_user, only: :update
+
   resources :listings, only: %i[index show]
   resources :properties, only: %i[index show]
   resources :neighborhoods, only: %i[index show]

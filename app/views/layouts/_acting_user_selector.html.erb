@@ -1,0 +1,11 @@
+<%# Stand-in for login until Assignment 4: every action is made as the user chosen here. %>
+<%= form_with url: acting_user_path, method: :patch, class: "d-flex align-items-center gap-2",
+      data: { controller: "auto-submit" } do |form| %>
+  <%= form.label :user_id, "Acting as", class: "small text-muted text-nowrap mb-0" %>
+  <%= form.select :user_id,
+        options_from_collection_for_select(User.order(:name), :id, ->(user) { user.moderator? ? "#{user.name} (moderator)" : user.name },
+                                           current_user&.id),
+        { include_blank: "Visitor (nobody)" },
+        class: "form-select form-select-sm", data: { action: "change->auto-submit#submit" } %>
+  <noscript><%= form.submit "Switch", class: "btn btn-sm btn-outline-primary" %></noscript>
+<% end %>

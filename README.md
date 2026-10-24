@@ -84,7 +84,7 @@ bin/rails db:drop db:create db:migrate db:seed
 
 ### Test users
 
-Every seeded user has the password **`password123`**. Login arrives in Assignment 4, so for now these accounts only identify the sample data.
+Every seeded user has the password **`password123`**. Login arrives in Assignment 4; until then, choose who you are acting as with the **Acting as** selector in the navbar. Every action (publishing, applying, answering an application) is made as that user, and choosing *Visitor* browses as someone who is not signed in.
 
 | Role | Name | Email |
 |---|---|---|

@@ -1,0 +1,17 @@
+<%# Top of every form: how many fields need fixing, plus the errors that belong to no single field
+    (errors[:base], e.g. "this listing is no longer accepting applications"). The per-field messages
+    are printed next to each field with `field_error`. %>
+<% if record.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <p class="fw-semibold mb-0">
+      <%= pluralize(record.errors.count, "error") %> prevented this <%= record.model_name.human.downcase %> from being saved.
+    </p>
+    <% if record.errors[:base].any? %>
+      <ul class="mb-0 mt-2">
+        <% record.errors.full_messages_for(:base).each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+<% end %>

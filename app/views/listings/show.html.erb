@@ -22,7 +22,7 @@
       <section class="mb-4" aria-labelledby="description-heading">
         <h2 id="description-heading" class="h4 fw-bold">About this room</h2>
         <% if @listing.description.present? %>
-          <%= simple_format @listing.description %>
+          <%= @listing.description %>
         <% else %>
           <p class="text-muted">The host has not written a description yet.</p>
         <% end %>
@@ -31,7 +31,7 @@
       <section class="mb-4" aria-labelledby="house-rules-heading">
         <h2 id="house-rules-heading" class="h4 fw-bold">House rules</h2>
         <% if @listing.house_rules.present? %>
-          <%= simple_format @listing.house_rules %>
+          <%= @listing.house_rules %>
         <% else %>
           <p class="text-muted">The host has not written any house rules yet.</p>
         <% end %>

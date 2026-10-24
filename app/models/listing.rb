@@ -9,6 +9,10 @@ class Listing < ApplicationRecord
   has_many :reports, dependent: :destroy
   has_many :moderation_actions, foreign_key: :target_listing_id, inverse_of: :target_listing, dependent: :nullify
 
+  # Rich text (bold, italics, lists, links) stored by Action Text in action_text_rich_texts.
+  has_rich_text :description
+  has_rich_text :house_rules
+
   enum :status, {
     draft: "draft",
     published: "published",

@@ -85,4 +85,11 @@ class ListingTest < ActiveSupport::TestCase
   test "host is the host of the property" do
     assert_equal users(:host), @listing.host
   end
+
+  test "description and house rules keep their formatting as rich text" do
+    @listing.update!(description: "A <strong>bright</strong> room", house_rules: "<ul><li>No smoking</li></ul>")
+
+    assert_includes @listing.reload.description.body.to_html, "<strong>bright</strong>"
+    assert_equal "No smoking", @listing.house_rules.to_plain_text.strip.delete_prefix("• ")
+  end
 end

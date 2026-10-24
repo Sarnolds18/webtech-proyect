@@ -9,8 +9,8 @@ puts "Cleaning database..."
 
 # Delete in reverse dependency order because of the foreign keys.
 [
-  ModerationAction, Report, SavedListing, ReviewReply, Review, Visit, Application, Listing,
-  PropertyAmenity, Property, Amenity, Neighborhood, User
+  ModerationAction, Report, SavedListing, ReviewReply, Review, Visit, Application, ActionText::RichText,
+  Listing, PropertyAmenity, Property, Amenity, Neighborhood, User
 ].each(&:delete_all)
 
 # --- Neighborhoods ---------------------------------------------------------------------------
@@ -176,25 +176,28 @@ p6.amenities << [ wifi, washer, dryer, kitchen, parking ]
 
 puts "Seeding listings..."
 
+# Description and house rules are Action Text rich text, so they take HTML: house rules are a bullet list.
+rules = ->(*items) { "<ul>#{items.map { |item| "<li>#{item}.</li>" }.join}</ul>" }
+
 # Property 1 (Providencia): two open rooms and one already reserved.
 l1a = Listing.create!(
   property: p1, status: :published, title: "Sunny room with private bathroom",
-  description: "Large room with a south-facing window and its own bathroom. Furnished with a double bed, desk and wardrobe.",
-  house_rules: "No smoking indoors. Quiet hours after 11 pm. Guests are welcome with advance notice.",
+  description: "<strong>Large room</strong> with a south-facing window and <em>its own bathroom</em>. Furnished with a double bed, desk and wardrobe.",
+  house_rules: rules.call("No smoking indoors", "Quiet hours after 11 pm", "Guests are welcome with advance notice"),
   monthly_rent: 380_000, deposit: 380_000, minimum_stay_months: 6,
   furnished: true, private_bathroom: true, available_from: Date.current + 12
 )
 l1b = Listing.create!(
   property: p1, status: :published, title: "Small room next to the metro",
   description: "Cozy single room, perfect for a student or someone who works long hours. Shares one bathroom with a housemate.",
-  house_rules: "Clean up after cooking. No pets because one housemate is allergic.",
+  house_rules: rules.call("Clean up after cooking", "No pets because one housemate is allergic"),
   monthly_rent: 260_000, deposit: 260_000, minimum_stay_months: 3,
   furnished: true, private_bathroom: false, available_from: Date.current + 30
 )
 l1c = Listing.create!(
   property: p1, status: :reserved, title: "Room with balcony access",
   description: "Medium room with direct access to the balcony. Already promised to the selected applicant.",
-  house_rules: "No smoking. Share the cleaning of common areas every week.",
+  house_rules: rules.call("No smoking", "Share the cleaning of common areas every week"),
   monthly_rent: 320_000, deposit: 320_000, minimum_stay_months: 6,
   furnished: false, private_bathroom: false, available_from: Date.current + 20
 )
@@ -202,22 +205,22 @@ l1c = Listing.create!(
 # Property 2 (Ñuñoa): two open rooms (one with several applicants) and one already rented.
 l2a = Listing.create!(
   property: p2, status: :published, title: "Large room with private bathroom",
-  description: "The biggest room of the house, on the ground floor, with its own bathroom and a door to the garden. Unfurnished, so bring your own style.",
-  house_rules: "Pets are welcome. Sunday dinner is optional but highly recommended. Quiet after midnight.",
+  description: "<strong>The biggest room of the house</strong>, on the ground floor, with its own bathroom and a door to the garden. Unfurnished, so bring your own style.",
+  house_rules: rules.call("Pets are welcome", "Sunday dinner is optional but highly recommended", "Quiet after midnight"),
   monthly_rent: 340_000, deposit: 340_000, minimum_stay_months: 6,
   furnished: false, private_bathroom: true, available_from: Date.current + 15
 )
 l2b = Listing.create!(
   property: p2, status: :published, title: "Budget room near Plaza Ñuñoa",
   description: "Simple and bright room in the second floor, shared bathroom with one housemate. Great for a short stay.",
-  house_rules: "No smoking indoors. Keep shared spaces tidy.",
+  house_rules: rules.call("No smoking indoors", "Keep shared spaces tidy"),
   monthly_rent: 210_000, deposit: 0, minimum_stay_months: 1,
   furnished: true, private_bathroom: false, available_from: Date.current + 5
 )
 l2c = Listing.create!(
   property: p2, status: :rented, title: "Garden-view room",
   description: "Quiet room overlooking the backyard. Taken by a new housemate who moved in recently.",
-  house_rules: "No smoking indoors. Share the grocery staples.",
+  house_rules: rules.call("No smoking indoors", "Share the grocery staples"),
   monthly_rent: 280_000, deposit: 280_000, minimum_stay_months: 6,
   furnished: true, private_bathroom: false, available_from: Date.current + 10
 )
@@ -226,7 +229,7 @@ l2c = Listing.create!(
 l3 = Listing.create!(
   property: p3, status: :published, title: "Furnished room in El Golf",
   description: "Furnished room with air conditioning in a modern building with a gym on the ground floor. Ideal for professionals.",
-  house_rules: "No parties. Guests can stay up to three nights a month.",
+  house_rules: rules.call("No parties", "Guests can stay up to three nights a month"),
   monthly_rent: 450_000, deposit: 450_000, minimum_stay_months: 12,
   furnished: true, private_bathroom: false, available_from: Date.current + 40
 )
@@ -235,14 +238,14 @@ l3 = Listing.create!(
 l4a = Listing.create!(
   property: p4, status: :draft, title: "Room facing Parque Forestal",
   description: "Draft: still need to add photos and fix the description.",
-  house_rules: "To be defined.",
+  house_rules: rules.call("To be defined"),
   monthly_rent: 230_000, deposit: 230_000, minimum_stay_months: 3,
   furnished: true, private_bathroom: false, available_from: Date.current + 60
 )
 l4b = Listing.create!(
   property: p4, status: :withdrawn, title: "Studio-style room downtown",
   description: "Promised a private studio with a full kitchen, but the pictures did not match the real room.",
-  house_rules: "No restrictions.",
+  house_rules: rules.call("No restrictions"),
   monthly_rent: 180_000, deposit: 180_000, minimum_stay_months: 1,
   furnished: true, private_bathroom: true, available_from: Date.current + 7
 )
@@ -251,14 +254,14 @@ l4b = Listing.create!(
 l5a = Listing.create!(
   property: p5, status: :published, title: "Student room near Campus San Joaquín",
   description: "Furnished room with a desk and a shelf for your books. Fast internet and a quiet study room downstairs.",
-  house_rules: "Quiet hours from 10 pm during exam season. No smoking.",
+  house_rules: rules.call("Quiet hours from 10 pm during exam season", "No smoking"),
   monthly_rent: 220_000, deposit: 220_000, minimum_stay_months: 5,
   furnished: true, private_bathroom: false, available_from: Date.current + 18
 )
 l5b = Listing.create!(
   property: p5, status: :published, title: "Room with parking spot",
   description: "Unfurnished room with a dedicated parking spot in the front garden. Great if you commute by car.",
-  house_rules: "Pets welcome with the host's approval. Keep the garden tidy.",
+  house_rules: rules.call("Pets welcome with the host's approval", "Keep the garden tidy"),
   monthly_rent: 240_000, deposit: 240_000, minimum_stay_months: 6,
   furnished: false, private_bathroom: false, available_from: Date.current + 25
 )
@@ -267,7 +270,7 @@ l5b = Listing.create!(
 l6 = Listing.create!(
   property: p6, status: :published, title: "Room with Andes view in La Reina",
   description: "Spacious room with a terrace overlooking the mountains. Private bathroom and parking included.",
-  house_rules: "No smoking. Respect quiet hours after 11 pm. Weekly cleaning rota.",
+  house_rules: rules.call("No smoking", "Respect quiet hours after 11 pm", "Weekly cleaning rota"),
   monthly_rent: 400_000, deposit: 400_000, minimum_stay_months: 9,
   furnished: true, private_bathroom: true, available_from: Date.current + 45
 )

@@ -1,0 +1,26 @@
+<%# Photograph upload for the listing form: render it inside `form_with model: listing`.
+    Assigning `photos` replaces every attachment, so the photographs already saved are sent back as
+    hidden signed ids and the new files are added to them instead of replacing them. %>
+<div class="mb-3">
+  <%= form.label :photos, "Photographs", class: "form-label" %>
+
+  <% form.object.photos.select(&:persisted?).each do |photo| %>
+    <%= form.hidden_field :photos, multiple: true, value: photo.signed_id, id: nil %>
+  <% end %>
+
+  <% if form.object.photos.any?(&:persisted?) %>
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      <% form.object.photos.select(&:persisted?).each do |photo| %>
+        <%= image_tag photo.variant(:card), class: "rounded border object-fit-cover", width: 120, height: 80,
+              alt: photo.filename.to_s %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= form.file_field :photos, multiple: true, accept: Listing::PHOTO_CONTENT_TYPES.join(","),
+        class: "form-control", aria: { describedby: "photos_help" } %>
+  <div id="photos_help" class="form-text">
+    JPEG, PNG or WebP, up to <%= Listing::MAX_PHOTO_SIZE / 1.megabyte %> MB each and <%= Listing::MAX_PHOTOS %> in total.
+  </div>
+  <%= field_error form.object, :photos %>
+</div>

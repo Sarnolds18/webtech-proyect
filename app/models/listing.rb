@@ -13,6 +13,17 @@ class Listing < ApplicationRecord
   has_rich_text :description
   has_rich_text :house_rules
 
+  # Photographs of the room, uploaded from the listing form. Cards use the small :card variant so
+  # they never download the full-resolution file; the listing page uses :large.
+  PHOTO_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
+  MAX_PHOTO_SIZE = 5.megabytes
+  MAX_PHOTOS = 10
+
+  has_many_attached :photos do |attachable|
+    attachable.variant :card, resize_to_fill: [ 600, 400 ]
+    attachable.variant :large, resize_to_limit: [ 1600, 1200 ]
+  end
+
   enum :status, {
     draft: "draft",
     published: "published",
@@ -28,6 +39,7 @@ class Listing < ApplicationRecord
   validates :available_from, presence: true
   # Only on create, so historical listings (e.g. already rented) stay valid when edited later.
   validate :available_from_not_in_past, on: :create
+  validate :photos_are_images_within_size_limit
 
   # Filter scopes are chainable and return everything when the argument is blank,
   # because they are fed straight from form params (which arrive as strings).
@@ -51,5 +63,19 @@ class Listing < ApplicationRecord
     return if available_from.blank?
 
     errors.add(:available_from, "cannot be in the past") if available_from < Date.current
+  end
+
+  def photos_are_images_within_size_limit
+    errors.add(:photos, "can be at most #{MAX_PHOTOS}") if photos.size > MAX_PHOTOS
+
+    photos.each do |photo|
+      unless photo.content_type.in?(PHOTO_CONTENT_TYPES)
+        errors.add(:photos, "#{photo.filename} is not a JPEG, PNG or WebP image")
+      end
+
+      if photo.byte_size > MAX_PHOTO_SIZE
+        errors.add(:photos, "#{photo.filename} is larger than #{MAX_PHOTO_SIZE / 1.megabyte} MB")
+      end
+    end
   end
 end

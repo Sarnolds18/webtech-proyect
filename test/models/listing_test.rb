@@ -5,6 +5,11 @@ class ListingTest < ActiveSupport::TestCase
     @listing = listings(:cheap)
   end
 
+  # An attachable for a file in test/fixtures/files, like the ones a form upload produces.
+  def upload(name, content_type)
+    { io: file_fixture(name).open, filename: name, content_type: content_type }
+  end
+
   test "fixture is valid" do
     assert @listing.valid?
   end
@@ -84,6 +89,56 @@ class ListingTest < ActiveSupport::TestCase
 
   test "host is the host of the property" do
     assert_equal users(:host), @listing.host
+  end
+
+  test "accepts several photographs" do
+    2.times { @listing.photos.attach(upload("room.jpg", "image/jpeg")) }
+
+    assert @listing.valid?
+    assert_equal 2, @listing.photos.size
+  end
+
+  test "rejects files that are not images" do
+    @listing.photos.attach(upload("notes.txt", "text/plain"))
+
+    assert_not @listing.valid?
+    assert_includes @listing.errors[:photos], "notes.txt is not a JPEG, PNG or WebP image"
+  end
+
+  test "rejects photographs over the size limit" do
+    big = StringIO.new("0" * (Listing::MAX_PHOTO_SIZE + 1))
+    @listing.photos.attach(io: big, filename: "huge.jpg", content_type: "image/jpeg", identify: false)
+
+    assert_not @listing.valid?
+    assert_includes @listing.errors[:photos], "huge.jpg is larger than 5 MB"
+  end
+
+  test "rejects more photographs than the limit" do
+    (Listing::MAX_PHOTOS + 1).times { @listing.photos.attach(upload("room.jpg", "image/jpeg")) }
+
+    assert_not @listing.valid?
+    assert_includes @listing.errors[:photos], "can be at most #{Listing::MAX_PHOTOS}"
+  end
+
+  test "the form keeps saved photographs by sending back their signed ids" do
+    @listing.photos.attach(upload("room.jpg", "image/jpeg"))
+    kept = @listing.photos.first
+
+    # What listings/_photo_fields submits: the saved photographs' signed ids, a blank, and the new file.
+    @listing.update!(photos: [ kept.signed_id, "", upload("room.jpg", "image/jpeg") ])
+
+    assert_equal 2, @listing.reload.photos.size
+    assert_includes @listing.photos.map(&:blob_id), kept.blob_id
+  end
+
+  test "cards use a small variant instead of the full photograph" do
+    @listing.photos.attach(upload("room.jpg", "image/jpeg"))
+    @listing.save!
+
+    card = @listing.photos.first.variant(:card).processed
+    image = card.image.blob.open { |file| Vips::Image.new_from_file(file.path) }
+
+    assert_equal [ 600, 400 ], [ image.width, image.height ]
   end
 
   test "description and house rules keep their formatting as rich text" do

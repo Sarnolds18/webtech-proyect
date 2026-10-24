@@ -15,6 +15,12 @@
   }
 }
 
+// Shown instead of a photograph while a listing has none.
+.listing-photo-placeholder {
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+}
+
 .listing-card-price {
   font-size: 1.05rem;
   white-space: nowrap;

@@ -8,7 +8,7 @@ class NeighborhoodsController < ApplicationController
   end
 
   def show
-    @listings = @neighborhood.listings.published.includes(property: :neighborhood).soonest_available
+    @listings = @neighborhood.listings.published.with_attached_photos.includes(property: :neighborhood).soonest_available
     @properties = @neighborhood.properties.includes(:neighborhood, :host, :listings).order(:title)
   end
 

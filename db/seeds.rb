@@ -7,6 +7,11 @@
 
 puts "Cleaning database..."
 
+# Photographs: drop the attachments and variant records, then each blob together with its file in storage/.
+ActiveStorage::Attachment.delete_all
+ActiveStorage::VariantRecord.delete_all
+ActiveStorage::Blob.find_each(&:purge)
+
 # Delete in reverse dependency order because of the foreign keys.
 [
   ModerationAction, Report, SavedListing, ReviewReply, Review, Visit, Application, ActionText::RichText,
@@ -281,6 +286,20 @@ l6 = Listing.create!(
 l1c.update_columns(available_from: Date.current - 20)
 l2c.update_columns(available_from: Date.current - 45)
 l4b.update_columns(available_from: Date.current - 10)
+
+# --- Photographs -----------------------------------------------------------------------------
+
+puts "Attaching photographs..."
+
+# Every listing gets the sample photographs in db/seeds/photos, starting from a different one so the
+# cards do not all look the same. The draft is still missing its photographs (as its description says).
+SEED_PHOTOS = Dir[Rails.root.join("db/seeds/photos/*.jpg")].sort.freeze
+
+[ l1a, l1b, l1c, l2a, l2b, l2c, l3, l4b, l5a, l5b, l6 ].each_with_index do |listing, index|
+  SEED_PHOTOS.rotate(index).each do |path|
+    listing.photos.attach(io: File.open(path), filename: File.basename(path), content_type: "image/jpeg")
+  end
+end
 
 # --- Applications ----------------------------------------------------------------------------
 

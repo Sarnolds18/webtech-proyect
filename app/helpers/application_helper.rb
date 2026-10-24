@@ -1,7 +1,4 @@
 module ApplicationHelper
-  # Listings have no photographs yet, so each one borrows one of the landing page pictures.
-  PLACEHOLDER_PHOTOS = %w[nunoa.jpg providencia.jpg las_condes.jpg].freeze
-
   # Bootstrap color for each state of a listing, an application or a visit.
   STATUS_COLORS = {
     "draft" => "secondary", "published" => "success", "reserved" => "warning", "rented" => "info",
@@ -27,8 +24,16 @@ module ApplicationHelper
     date.strftime("%B %-d, %Y")
   end
 
-  def listing_photo(listing)
-    PLACEHOLDER_PHOTOS[listing.id % PLACEHOLDER_PHOTOS.size]
+  # The first photograph of a listing at card size, or a neutral placeholder when it has none.
+  def listing_cover_photo(listing, alt:, css: nil)
+    if listing.photos.attached?
+      image_tag listing.photos.first.variant(:card), alt: alt, class: css, loading: "lazy"
+    else
+      tag.div class: class_names(css, "listing-photo-placeholder d-flex align-items-center justify-content-center"),
+              role: "img", aria: { label: "#{alt}: no photographs yet" } do
+        tag.i class: "bi bi-image fs-1", aria: { hidden: true }
+      end
+    end
   end
 
   def status_badge(status)

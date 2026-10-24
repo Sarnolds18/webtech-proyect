@@ -2,7 +2,7 @@
 <% neighborhood = listing.property.neighborhood %>
 <div class="col">
   <article class="card h-100 shadow-sm overflow-hidden listing-card">
-    <%= image_tag listing_photo(listing), class: "card-img-top", alt: "Room in #{neighborhood.name}" %>
+    <%= listing_cover_photo(listing, css: "card-img-top", alt: "Room in #{neighborhood.name}") %>
     <% unless listing.published? %>
       <span class="position-absolute top-0 start-0 m-3"><%= status_badge(listing.status) %></span>
     <% end %>

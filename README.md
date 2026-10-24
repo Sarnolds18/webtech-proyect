@@ -45,6 +45,7 @@ webtech-proyect/
 - Ruby 4.0.4 (see `.ruby-version`)
 - Node.js and Yarn (Bootstrap is compiled from Sass with `cssbundling-rails`)
 - PostgreSQL, running locally
+- libvips, used by Active Storage to resize photographs (`sudo apt install libvips42` on Ubuntu/WSL, `brew install vips` on macOS)
 
 ### Setup
 
@@ -73,6 +74,18 @@ bin/rails test
 ```
 
 The model tests cover validations, enums, scopes and database constraints (for example, only one accepted application per listing).
+
+### Photographs
+
+Listing photographs are stored with Active Storage (on disk, in `storage/`). Each listing can have up to
+**10 photographs**, and the uploads are validated in the `Listing` model:
+
+- **Only images**: JPEG, PNG or WebP.
+- **Size limit: 5 MB per photograph.**
+
+Cards show a 600×400 variant of the first photograph, and the listing page shows every photograph at a
+1600×1200 maximum, so no page downloads an original upload. The sample photographs used by the seeds
+live in [`db/seeds/photos`](./db/seeds/photos).
 
 ### Reset the data
 
@@ -118,6 +131,7 @@ The application is **read-only** in Assignment 2: nothing can be created, edited
 
 - **PostgreSQL is not running**: start it with `sudo service postgresql start`.
 - **`yarn: command not found`** or **`cssbundling-rails: No suitable tool found for installing JavaScript dependencies`**: install Yarn with `npm install -g yarn`, then run `yarn install`. (`corepack enable` also works, but only on Node.js 24 or older: Node.js 25 stopped shipping Corepack.)
+- **`Could not open library 'vips'`** or photographs not showing: install libvips (see Requirements).
 - **Ruby version mismatch**: install the version in `.ruby-version`, e.g. `rbenv install 4.0.4`.
 
 ## Assignment 1 — User Stories, Domain Model, and Landing Page

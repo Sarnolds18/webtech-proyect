@@ -1,0 +1,72 @@
+<%# New listings are created inside their property (POST /properties/:id/listings); existing ones
+    are updated at /listings/:id. %>
+<%= form_with model: listing.new_record? ? [ listing.property, listing ] : listing do |form| %>
+  <%= render "shared/form_errors", record: listing %>
+
+  <div class="mb-3">
+    <%= form.label :title, class: "form-label" %>
+    <%= form.text_field :title, class: "form-control", required: true, maxlength: 120,
+          placeholder: "e.g. Cozy room with a balcony" %>
+    <%= field_error listing, :title %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= form.label :monthly_rent, "Monthly rent (CLP)", class: "form-label" %>
+      <%= form.number_field :monthly_rent, class: "form-control", required: true, min: 1, step: 1, placeholder: "320000" %>
+      <%= field_error listing, :monthly_rent %>
+    </div>
+
+    <div class="col-md-6">
+      <%= form.label :deposit, "Deposit (CLP)", class: "form-label" %>
+      <%= form.number_field :deposit, class: "form-control", required: true, min: 0, step: 1, placeholder: "320000" %>
+      <%= field_error listing, :deposit %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= form.label :available_from, class: "form-label" %>
+      <%= form.date_field :available_from, class: "form-control", required: true,
+            min: (Date.current if listing.new_record?) %>
+      <%= field_error listing, :available_from %>
+    </div>
+
+    <div class="col-md-6">
+      <%= form.label :minimum_stay_months, "Minimum stay (months)", class: "form-label" %>
+      <%= form.number_field :minimum_stay_months, class: "form-control", required: true, min: 1, step: 1, placeholder: "6" %>
+      <%= field_error listing, :minimum_stay_months %>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-4 mb-3">
+    <div class="form-check">
+      <%= form.check_box :furnished, class: "form-check-input" %>
+      <%= form.label :furnished, "Furnished", class: "form-check-label" %>
+    </div>
+    <div class="form-check">
+      <%= form.check_box :private_bathroom, class: "form-check-input" %>
+      <%= form.label :private_bathroom, "Private bathroom", class: "form-check-label" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :description, class: "form-label" %>
+    <%= form.rich_textarea :description, placeholder: "The room, the light, the furniture, the housemates..." %>
+    <%= field_error listing, :description %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :house_rules, class: "form-label" %>
+    <%= form.rich_textarea :house_rules, placeholder: "Quiet hours, guests, pets, cleaning..." %>
+    <%= field_error listing, :house_rules %>
+  </div>
+
+  <%= render "listings/photo_fields", form: form %>
+
+  <div class="d-flex flex-wrap gap-2 mt-4">
+    <%= form.submit listing.new_record? ? "Save as draft" : "Update listing", class: "btn btn-primary" %>
+    <%= link_to "Cancel", listing.new_record? ? property_path(listing.property) : listing_path(listing),
+          class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

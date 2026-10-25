@@ -1,0 +1,48 @@
+<%# The state of the listing and what can be done with it now: everything for the host, withdrawing
+    for a moderator. The model enforces the rules; this only hides the buttons that do not apply. %>
+<% hosting = listing.host == current_user %>
+<% if hosting || (current_user&.moderator? && listing.withdrawable?) %>
+  <section class="card shadow-sm border-primary-subtle mb-4" aria-labelledby="status-actions-heading">
+    <div class="card-body p-4">
+      <h2 id="status-actions-heading" class="h5 fw-bold d-flex align-items-center gap-2 mb-2">
+        <%= hosting ? "Your listing" : "Moderation" %> <%= status_badge(listing.status) %>
+      </h2>
+
+      <p class="small text-muted mb-3">
+        <% case listing.status %>
+        <% when "draft" %>
+          Only you can see this draft. Publish it to show it in the search and receive applications.
+        <% when "published" %>
+          It appears in the search and is receiving applications.
+        <% when "reserved" %>
+          An applicant was accepted. Mark it as rented once the new housemate has moved in.
+        <% when "rented" %>
+          The room is rented. The listing stays here as a record.
+        <% when "withdrawn" %>
+          This listing was withdrawn. It no longer receives applications.
+        <% end %>
+      </p>
+
+      <div class="d-grid gap-2">
+        <% if hosting && listing.publishable? %>
+          <%= button_to "Publish", publish_listing_path(listing), method: :patch, class: "btn btn-success w-100" %>
+        <% end %>
+        <% if hosting && listing.rentable? %>
+          <%= button_to "Mark as rented", mark_rented_listing_path(listing), method: :patch, class: "btn btn-info w-100",
+                form: { data: { turbo_confirm: "Has the new housemate moved in?" } } %>
+        <% end %>
+        <% if hosting %>
+          <%= link_to "Edit listing", edit_listing_path(listing), class: "btn btn-outline-primary" %>
+        <% end %>
+        <% if listing.withdrawable? %>
+          <%= button_to "Withdraw", withdraw_listing_path(listing), method: :patch, class: "btn btn-outline-warning w-100",
+                form: { data: { turbo_confirm: "Withdraw this listing? Applications still waiting for an answer will be rejected." } } %>
+        <% end %>
+        <% if hosting && listing.draft? %>
+          <%= button_to "Delete", listing_path(listing), method: :delete, class: "btn btn-outline-danger w-100",
+                form: { data: { turbo_confirm: "Delete this draft? This cannot be undone." } } %>
+        <% end %>
+      </div>
+    </div>
+  </section>
+<% end %>

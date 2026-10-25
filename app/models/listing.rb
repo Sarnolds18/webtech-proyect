@@ -41,6 +41,10 @@ class Listing < ApplicationRecord
   validate :available_from_not_in_past, on: :create
   validate :photos_are_images_within_size_limit
 
+  # Only drafts are deleted. A listing that was published may have applications, so it is withdrawn
+  # instead and the seekers keep their history (and the visits and reviews that hang from it).
+  before_destroy :ensure_draft, prepend: true
+
   # Filter scopes are chainable and return everything when the argument is blank,
   # because they are fed straight from form params (which arrive as strings).
 
@@ -57,7 +61,60 @@ class Listing < ApplicationRecord
     property.host
   end
 
+  def visible_to?(user)
+    !draft? || (user.present? && host == user)
+  end
+
+  # Lifecycle: draft -> published -> reserved (accepting an applicant) -> rented, or withdrawn while
+  # it is published or reserved. Each transition raises ActiveRecord::RecordInvalid, with the
+  # reason in `errors`, when the listing is not in a state that allows it.
+  def publishable?
+    draft?
+  end
+
+  def withdrawable?
+    published? || reserved?
+  end
+
+  def rentable?
+    reserved?
+  end
+
+  def publish!
+    transition_to!(:published, allowed: publishable?, otherwise: "can only be published while it is a draft")
+  end
+
+  # Withdrawing also answers the applications still waiting for a decision: they are rejected,
+  # together with the change of state or not at all.
+  def withdraw!
+    transaction do
+      transition_to!(:withdrawn, allowed: withdrawable?, otherwise: "cannot be withdrawn once it is #{status}")
+      applications.undecided.update_all(status: "rejected", updated_at: Time.current)
+    end
+  end
+
+  # Once the accepted housemate has moved in.
+  def mark_rented!
+    transition_to!(:rented, allowed: rentable?, otherwise: "can only be marked as rented once an applicant is accepted")
+  end
+
   private
+
+  def transition_to!(new_status, allowed:, otherwise:)
+    unless allowed
+      errors.add(:status, otherwise)
+      raise ActiveRecord::RecordInvalid, self
+    end
+
+    update!(status: new_status)
+  end
+
+  def ensure_draft
+    return if draft?
+
+    errors.add(:base, "Only a draft can be deleted. Withdraw the listing instead.")
+    throw :abort
+  end
 
   def available_from_not_in_past
     return if available_from.blank?

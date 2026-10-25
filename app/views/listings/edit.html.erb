@@ -1,0 +1,11 @@
+<% content_for :title, "Edit #{@listing.title_was} - Roomies" %>
+
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-1">Edit <%= @listing.title_was %></h1>
+      <p class="text-muted mb-4">In <%= link_to @property.title, property_path(@property) %>.</p>
+      <%= render "form", listing: @listing %>
+    </div>
+  </div>
+</div>

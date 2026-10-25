@@ -147,4 +147,76 @@ class ListingTest < ActiveSupport::TestCase
     assert_includes @listing.reload.description.body.to_html, "<strong>bright</strong>"
     assert_equal "No smoking", @listing.house_rules.to_plain_text.strip.delete_prefix("• ")
   end
+
+  test "a draft is visible only to its host" do
+    draft = listings(:draft)
+
+    assert draft.visible_to?(users(:host))
+    assert_not draft.visible_to?(users(:seeker))
+    assert_not draft.visible_to?(nil)
+    assert @listing.visible_to?(nil)
+  end
+
+  test "a draft is published" do
+    draft = listings(:draft)
+    draft.publish!
+
+    assert draft.reload.published?
+  end
+
+  test "only a draft can be published" do
+    error = assert_raises(ActiveRecord::RecordInvalid) { @listing.publish! }
+
+    assert_match "can only be published while it is a draft", error.message
+  end
+
+  test "withdrawing rejects the pending and shortlisted applications, and only those" do
+    shortlisted = Application.create!(listing: @listing, seeker: users(:other_seeker), status: :shortlisted,
+                                      message: "Count me in.", move_in_date: 20.days.from_now.to_date, stay_months: 6)
+    accepted = Application.create!(listing: @listing, seeker: users(:moderator), status: :accepted,
+                                   message: "Me too.", move_in_date: 20.days.from_now.to_date, stay_months: 6)
+    @listing.withdraw!
+
+    assert @listing.reload.withdrawn?
+    assert applications(:pending).reload.rejected?
+    assert shortlisted.reload.rejected?
+    assert accepted.reload.accepted?
+  end
+
+  test "a reserved listing can be withdrawn" do
+    @listing.update!(status: :reserved)
+    @listing.withdraw!
+
+    assert @listing.reload.withdrawn?
+  end
+
+  test "drafts, rented and withdrawn listings cannot be withdrawn" do
+    assert_raises(ActiveRecord::RecordInvalid) { listings(:draft).withdraw! }
+    assert listings(:draft).reload.draft?
+
+    %i[rented withdrawn].each do |status|
+      @listing.update!(status: status)
+
+      assert_raises(ActiveRecord::RecordInvalid) { @listing.withdraw! }
+      assert_equal status.to_s, @listing.reload.status
+    end
+    assert applications(:pending).reload.pending?
+  end
+
+  test "only a reserved listing is marked as rented" do
+    assert_raises(ActiveRecord::RecordInvalid) { @listing.mark_rented! }
+
+    @listing.update!(status: :reserved)
+    @listing.mark_rented!
+
+    assert @listing.reload.rented?
+  end
+
+  test "only a draft can be deleted" do
+    assert_not @listing.destroy
+    assert_includes @listing.errors[:base], "Only a draft can be deleted. Withdraw the listing instead."
+    assert Listing.exists?(@listing.id)
+
+    assert listings(:draft).destroy
+  end
 end

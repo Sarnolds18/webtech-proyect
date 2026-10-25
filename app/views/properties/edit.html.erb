@@ -1,0 +1,10 @@
+<% content_for :title, "Edit #{@property.title_was} - Roomies" %>
+
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-4">Edit <%= @property.title_was %></h1>
+      <%= render "form", property: @property, neighborhoods: @neighborhoods, amenities: @amenities %>
+    </div>
+  </div>
+</div>

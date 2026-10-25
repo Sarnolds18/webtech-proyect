@@ -1,0 +1,84 @@
+<%= form_with model: property do |form| %>
+  <%= render "shared/form_errors", record: property %>
+
+  <div class="mb-3">
+    <%= form.label :title, class: "form-label" %>
+    <%= form.text_field :title, class: "form-control", required: true, maxlength: 120,
+          placeholder: "e.g. Bright flat near Metro Los Leones" %>
+    <%= field_error property, :title %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :address, class: "form-label" %>
+    <%= form.text_field :address, class: "form-control", required: true, maxlength: 200, autocomplete: "street-address",
+          placeholder: "e.g. Av. Providencia 2133, depto 504" %>
+    <%= field_error property, :address %>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <%= form.label :neighborhood_id, "Neighborhood", class: "form-label" %>
+      <%= form.collection_select :neighborhood_id, neighborhoods, :id, :name,
+            { prompt: "Choose a neighborhood" }, class: "form-select", required: true %>
+      <%= field_error property, :neighborhood %>
+    </div>
+
+    <div class="col-md-6">
+      <%= form.label :property_type, class: "form-label" %>
+      <%= form.select :property_type, Property.property_types.keys.map { |type| [ type.humanize, type ] },
+            { prompt: "Choose a type" }, class: "form-select", required: true %>
+      <%= field_error property, :property_type %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6">
+      <%= form.label :bedrooms, class: "form-label" %>
+      <%= form.number_field :bedrooms, class: "form-control", required: true, min: 1, step: 1, placeholder: "3" %>
+      <%= field_error property, :bedrooms %>
+    </div>
+
+    <div class="col-6">
+      <%= form.label :bathrooms, class: "form-label" %>
+      <%= form.number_field :bathrooms, class: "form-control", required: true, min: 1, step: 1, placeholder: "2" %>
+      <%= field_error property, :bathrooms %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :shared_spaces, class: "form-label" %>
+    <%= form.text_area :shared_spaces, class: "form-control", rows: 3,
+          placeholder: "e.g. Living room, kitchen and a terrace shared with two housemates." %>
+    <%= field_error property, :shared_spaces %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :description, class: "form-label" %>
+    <%= form.text_area :description, class: "form-control", rows: 4,
+          placeholder: "What is it like to live here? The building, the street, the housemates." %>
+    <%= field_error property, :description %>
+  </div>
+
+  <fieldset class="mb-4">
+    <legend class="form-label fs-6">Amenities</legend>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-2">
+      <%= form.collection_check_boxes :amenity_ids, amenities, :id, :name do |box| %>
+        <div class="col">
+          <div class="form-check">
+            <%= box.check_box class: "form-check-input" %>
+            <%= box.label class: "form-check-label" do %>
+              <% if box.object.icon.present? %><i class="bi <%= box.object.icon %> me-1" aria-hidden="true"></i><% end %>
+              <%= box.text %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <%= field_error property, :amenities %>
+  </fieldset>
+
+  <div class="d-flex flex-wrap gap-2">
+    <%= form.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", property.persisted? ? property_path(property) : properties_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

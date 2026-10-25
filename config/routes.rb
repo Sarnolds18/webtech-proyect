@@ -18,6 +18,7 @@ Rails.application.routes.draw do
   # A listing is always created inside a property; once it exists it is addressed on its own.
   resources :properties do
     resources :listings, only: %i[new create]
+    resources :reviews, only: :create
   end
   resources :listings, except: %i[new create] do
     member do
@@ -25,8 +26,31 @@ Rails.application.routes.draw do
       patch :withdraw
       patch :mark_rented
     end
+
+    # Seekers apply from the listing page; the host answers them in the listing's inbox.
+    resources :applications, only: :create
+    resource :inbox, only: :show
   end
   resources :neighborhoods
   resources :amenities, except: :show
-  resources :applications, only: %i[index show]
+  resources :applications, only: %i[index show] do
+    member do
+      patch :withdraw
+      patch :shortlist
+      patch :reject
+      patch :accept
+    end
+
+    resources :visits, only: :create
+  end
+
+  # A visit is proposed inside an application; once it exists it is addressed on its own.
+  resources :visits, only: [] do
+    member do
+      patch :confirm
+      patch :cancel
+      patch :complete
+      patch :reschedule
+    end
+  end
 end

@@ -1,0 +1,91 @@
+<%# Applying to the listing, inside a Turbo Frame so sending or withdrawing an application replaces
+    only this block. ApplicationsController renders it with the application it just saved or that
+    failed; the listing page lets it find the acting user's application. The model enforces the
+    rules; this only shows what applies to the acting user. %>
+<% application = local_assigns.fetch(:application) { listing.applications.find_by(seeker: current_user) if current_user } %>
+<% notice = local_assigns[:notice] %>
+<% alert = local_assigns[:alert] %>
+
+<%= turbo_frame_tag "application_block" do %>
+  <section class="card shadow-sm mb-4" aria-labelledby="application-block-heading">
+    <div class="card-body p-4">
+      <h2 id="application-block-heading" class="h5 fw-bold mb-3">Apply for this room</h2>
+
+      <% if notice %>
+        <div class="alert alert-success small" role="status"><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div class="alert alert-danger small" role="alert"><%= alert %></div>
+      <% end %>
+
+      <% if current_user.nil? %>
+        <p class="text-muted mb-0">
+          <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
+          Choose a user in the navbar to apply for this room.
+        </p>
+
+      <% elsif listing.host == current_user %>
+        <p class="mb-3">This is your listing.</p>
+        <%= link_to listing_inbox_path(listing), class: "btn btn-outline-primary w-100", data: { turbo_frame: "_top" } do %>
+          <i class="bi bi-inbox me-1" aria-hidden="true"></i>Open the inbox
+          <span class="badge text-bg-primary ms-1"><%= listing.applications.awaiting_answer.count %></span>
+        <% end %>
+
+      <% elsif application&.persisted? %>
+        <p class="d-flex align-items-center gap-2 mb-2">
+          Your application <%= status_badge(application.status) %>
+        </p>
+        <p class="small text-muted mb-3">
+          Sent on <%= long_date(application.created_at) %> to move in on <%= long_date(application.move_in_date) %>
+          for <%= pluralize(application.stay_months, "month") %>.
+        </p>
+        <div class="d-grid gap-2">
+          <%= link_to "View your application", application_path(application), class: "btn btn-outline-primary",
+                data: { turbo_frame: "_top" } %>
+          <% if application.withdrawable? %>
+            <%= button_to "Withdraw", withdraw_application_path(application), method: :patch,
+                  class: "btn btn-outline-danger w-100",
+                  form: { data: { turbo_confirm: "Withdraw your application? You cannot apply to this listing again." } } %>
+          <% end %>
+        </div>
+
+      <% elsif !listing.published? %>
+        <p class="text-muted mb-0">Not accepting applications.</p>
+
+      <% else %>
+        <% application ||= listing.applications.new(move_in_date: [ listing.available_from, Date.current ].max,
+                                                     stay_months: listing.minimum_stay_months) %>
+        <%= form_with model: application, url: listing_applications_path(listing) do |form| %>
+          <%= render "shared/form_errors", record: form.object %>
+          <%# Errors about the application as a whole, e.g. applying twice from two tabs. %>
+          <%= field_error form.object, :seeker_id %>
+          <%= field_error form.object, :seeker %>
+          <%= field_error form.object, :listing %>
+
+          <div class="mb-3">
+            <%= form.label :message, "Message to the host", class: "form-label" %>
+            <%= form.text_area :message, class: "form-control", rows: 4, required: true,
+                  placeholder: "Introduce yourself: what you do, your routine, why this room..." %>
+            <%= field_error form.object, :message %>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :move_in_date, class: "form-label" %>
+            <%= form.date_field :move_in_date, class: "form-control", required: true, min: Date.current %>
+            <%= field_error form.object, :move_in_date %>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :stay_months, "Intended stay (months)", class: "form-label" %>
+            <%= form.number_field :stay_months, class: "form-control", required: true, step: 1,
+                  min: listing.minimum_stay_months %>
+            <div class="form-text">The host asks for at least <%= pluralize(listing.minimum_stay_months, "month") %>.</div>
+            <%= field_error form.object, :stay_months %>
+          </div>
+
+          <%= form.submit "Send application", class: "btn btn-primary w-100" %>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

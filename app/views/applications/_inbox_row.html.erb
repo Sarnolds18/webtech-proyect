@@ -1,0 +1,32 @@
+<%# One application in the host's inbox. Turbo Streams replace the whole row after each answer, so
+    the buttons always match the new state. The model enforces the rules; this only hides buttons. %>
+<% listing = application.listing %>
+<tr id="<%= dom_id(application) %>">
+  <td class="text-nowrap">
+    <%= application.seeker.name %>
+    <span class="d-block small text-muted">Applied on <%= long_date(application.created_at) %></span>
+  </td>
+  <td class="small"><%= truncate(application.message, length: 90) %></td>
+  <td class="text-nowrap"><%= long_date(application.move_in_date) %></td>
+  <td class="text-nowrap"><%= pluralize(application.stay_months, "month") %></td>
+  <td><%= status_badge(application.status) %></td>
+  <td class="text-end">
+    <div class="d-flex flex-wrap justify-content-end gap-2">
+      <% if listing.published? && application.pending? %>
+        <%= button_to "Shortlist", shortlist_application_path(application), method: :patch,
+              class: "btn btn-sm btn-outline-primary" %>
+      <% end %>
+      <% if listing.published? && application.undecided? %>
+        <%= button_to "Accept", accept_application_path(application), method: :patch, class: "btn btn-sm btn-success",
+              form: { data: { turbo_confirm: "Accept #{application.seeker.name}? Every other application still waiting will be rejected." } } %>
+      <% end %>
+      <% if application.undecided? %>
+        <%= button_to "Reject", reject_application_path(application), method: :patch, class: "btn btn-sm btn-outline-danger",
+              form: { data: { turbo_confirm: "Reject the application from #{application.seeker.name}?" } } %>
+      <% end %>
+      <%= link_to application_path(application), class: "btn btn-sm btn-outline-secondary" do %>
+        View<span class="visually-hidden"> application from <%= application.seeker.name %></span>
+      <% end %>
+    </div>
+  </td>
+</tr>

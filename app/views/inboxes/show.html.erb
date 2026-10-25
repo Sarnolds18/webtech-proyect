@@ -1,0 +1,41 @@
+<% content_for :title, "Inbox of #{@listing.title} - Roomies" %>
+
+<div class="container py-4">
+  <p class="mb-2">
+    <%= link_to listing_path(@listing) do %>
+      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to the listing
+    <% end %>
+  </p>
+  <h1 class="fw-bold mb-2">Inbox of <%= @listing.title %></h1>
+  <p class="d-flex flex-wrap align-items-center gap-2 text-muted mb-4">
+    <%= status_badge(@listing.status) %>
+    <span>
+      <span id="pending_count" class="fw-semibold text-body"><%= @listing.applications.awaiting_answer.count %></span>
+      waiting for an answer
+    </span>
+  </p>
+
+  <%= render "applications/privacy_notice" %>
+
+  <% if @applications.present? %>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Applicant</th>
+            <th scope="col">Message</th>
+            <th scope="col">Move-in date</th>
+            <th scope="col">Stay</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= render partial: "applications/inbox_row", collection: @applications, as: :application %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="mb-0">Nobody has applied to this listing yet.</p>
+  <% end %>
+</div>

@@ -24,9 +24,14 @@ class Application < ApplicationRecord
   scope :for_listing, ->(listing) { where(listing: listing) }
   scope :recent_first, -> { order(created_at: :desc) }
 
+  # The host has not accepted or rejected it yet (same states as the `undecided` scope).
+  def undecided?
+    pending? || shortlisted?
+  end
+
   # The seeker can take back an application only while the host has not decided on it yet.
   def withdrawable?
-    pending? || shortlisted?
+    undecided?
   end
 
   # The transitions below raise ActiveRecord::RecordInvalid (with the reason in `errors`) when they

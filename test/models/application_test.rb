@@ -81,6 +81,74 @@ class ApplicationTest < ActiveSupport::TestCase
     end
   end
 
+  test "only pending applications on a published listing can be shortlisted" do
+    applications(:pending).shortlist!
+    assert applications(:pending).reload.shortlisted?
+
+    error = assert_raises(ActiveRecord::RecordInvalid) { applications(:shortlisted).shortlist! }
+    assert_includes error.record.errors[:status], "cannot be shortlisted once it is shortlisted"
+  end
+
+  test "pending and shortlisted applications can be rejected" do
+    %i[pending shortlisted].each do |name|
+      applications(name).reject!
+
+      assert applications(name).reload.rejected?
+    end
+
+    assert_raises(ActiveRecord::RecordInvalid) { applications(:pending).reject! }
+  end
+
+  test "accepting rejects the other undecided applications and reserves the listing" do
+    listing = listings(:pricey)
+    rival = build_application(listing: listing)
+    rival.save!
+    already_withdrawn = Application.create!(
+      listing: listing, seeker: users(:moderator), status: :withdrawn,
+      message: "Changed my mind.", move_in_date: 2.months.from_now.to_date, stay_months: 12
+    )
+
+    applications(:shortlisted).accept!
+
+    assert applications(:shortlisted).reload.accepted?
+    assert rival.reload.rejected?
+    assert already_withdrawn.reload.withdrawn?, "decided applications are left alone"
+    assert listing.reload.reserved?
+    assert applications(:pending).reload.pending?, "applications of other listings are left alone"
+  end
+
+  test "a listing that is not published cannot accept" do
+    listings(:pricey).reserved!
+
+    error = assert_raises(ActiveRecord::RecordInvalid) { applications(:shortlisted).accept! }
+    assert_includes error.record.errors[:listing], "is not accepting applications"
+    assert applications(:shortlisted).reload.shortlisted?
+  end
+
+  test "decided applications cannot be accepted" do
+    application = applications(:shortlisted)
+    application.rejected!
+
+    assert_raises(ActiveRecord::RecordInvalid) { application.accept! }
+    assert listings(:pricey).reload.published?
+  end
+
+  test "accepting rolls everything back when a step fails" do
+    listing = listings(:pricey)
+    rival = build_application(listing: listing)
+    rival.save!
+    application = applications(:shortlisted)
+
+    # Make the last step of the transaction fail, after the application was accepted and the rival rejected.
+    application.listing.define_singleton_method(:reserved!) { raise ActiveRecord::RecordInvalid, self }
+
+    assert_raises(ActiveRecord::RecordInvalid) { application.accept! }
+
+    assert application.reload.shortlisted?
+    assert rival.reload.pending?
+    assert listing.reload.published?
+  end
+
   test "database allows only one accepted application per listing" do
     applications(:shortlisted).update!(status: :accepted)
 

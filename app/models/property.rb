@@ -12,6 +12,14 @@ class Property < ApplicationRecord
   validates :title, :address, presence: true
   validates :bedrooms, :bathrooms, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
 
+  # The completed visits of this seeker to the listings of this property that they have not reviewed yet.
+  def reviewable_visits_for(user)
+    return Visit.none if user.nil?
+
+    Visit.completed.joins(:application).where.missing(:review)
+         .where(applications: { seeker_id: user.id, listing_id: listings.select(:id) })
+  end
+
   def average_rating
     # Float, not BigDecimal: BigDecimal#to_s prints "0.45e1" in views.
     reviews.average(:rating)&.to_f&.round(1)

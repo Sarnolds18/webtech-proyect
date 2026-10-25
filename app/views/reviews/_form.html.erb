@@ -1,0 +1,49 @@
+<%# A seeker reviews the property after a completed visit. Shown only while one of their completed
+    visits has no review; the host never has one, so they never see it. %>
+<% visits = property.reviewable_visits_for(current_user).includes(application: :listing).chronological %>
+<% if visits.any? && property.host != current_user %>
+  <% review ||= Review.new %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <h3 class="h5 fw-bold mb-3">Review your visit</h3>
+
+      <%= form_with model: review, url: property_reviews_path(property) do |form| %>
+        <%= render "shared/form_errors", record: form.object %>
+
+        <% if visits.one? %>
+          <%= form.hidden_field :visit_id, value: visits.first.id %>
+          <p class="small text-muted">
+            Your visit to <strong><%= visits.first.application.listing.title %></strong>
+            on <%= long_date(visits.first.scheduled_at) %>.
+          </p>
+        <% else %>
+          <div class="mb-3">
+            <%= form.label :visit_id, "Visit", class: "form-label" %>
+            <%= form.collection_select :visit_id, visits, :id,
+                  ->(visit) { "#{visit.application.listing.title}, #{long_date(visit.scheduled_at)}" },
+                  {}, class: "form-select" %>
+          </div>
+        <% end %>
+        <%= field_error form.object, :visit %>
+        <%= field_error form.object, :visit_id %>
+        <%= field_error form.object, :author %>
+
+        <div class="mb-3">
+          <%= form.label :rating, class: "form-label" %>
+          <%= form.select :rating, (1..5).to_a.reverse.map { |stars| [ pluralize(stars, "star"), stars ] },
+                { prompt: "How was it?" }, class: "form-select", required: true %>
+          <%= field_error form.object, :rating %>
+        </div>
+
+        <div class="mb-3">
+          <%= form.label :comment, class: "form-label" %>
+          <%= form.text_area :comment, class: "form-control", rows: 4, required: true,
+                placeholder: "The room, the housemates, the host, the neighborhood..." %>
+          <%= field_error form.object, :comment %>
+        </div>
+
+        <%= form.submit "Publish review", class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

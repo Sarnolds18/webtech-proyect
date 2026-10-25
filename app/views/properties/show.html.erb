@@ -86,12 +86,15 @@
     <% else %>
       <p class="text-muted mb-0">This property has no listings yet.</p>
     <% end %>
+
+    <%= render "inboxes/links", listings: @listings if hosting %>
   </section>
 
   <section aria-labelledby="reviews-heading">
     <h2 id="reviews-heading" class="h4 fw-bold">Reviews</h2>
     <div class="row">
       <div class="col-lg-8">
+        <%= render "reviews/form", property: @property, review: @review %>
         <%= render "reviews/list", property: @property, reviews: @reviews %>
       </div>
     </div>

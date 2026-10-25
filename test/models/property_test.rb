@@ -38,4 +38,17 @@ class PropertyTest < ActiveSupport::TestCase
     assert_not @property.destroy
     assert @property.errors.any?
   end
+
+  test "reviewable visits are the seeker's completed visits to the property without a review" do
+    house = properties(:house)
+    seeker = users(:seeker)
+    assert_empty house.reviewable_visits_for(seeker), "the completed visit already has a review"
+
+    reviews(:house_review).destroy!
+    assert_equal [ visits(:completed) ], house.reviewable_visits_for(seeker).to_a
+    assert_empty house.reviewable_visits_for(users(:other_seeker))
+    assert_empty house.reviewable_visits_for(users(:host))
+    assert_empty house.reviewable_visits_for(nil)
+    assert_empty @property.reviewable_visits_for(seeker), "visits to other properties do not count"
+  end
 end

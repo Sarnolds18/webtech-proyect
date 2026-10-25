@@ -86,3 +86,12 @@ module ActiveSupport
     end
   end
 end
+
+module ActionDispatch
+  class IntegrationTest
+    # Picks the user in the navbar selector, the stand-in for logging in until Assignment 4.
+    def act_as(user)
+      patch acting_user_path, params: { user_id: user.id }
+    end
+  end
+end

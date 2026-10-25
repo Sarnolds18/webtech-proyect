@@ -1,0 +1,32 @@
+<%= form_with model: amenity do |form| %>
+  <%= render "shared/form_errors", record: amenity %>
+
+  <div class="mb-3">
+    <%= form.label :name, class: "form-label" %>
+    <%= form.text_field :name, class: "form-control", required: true, maxlength: 100, placeholder: "e.g. WiFi",
+          aria: { describedby: ("name_error" if amenity.errors[:name].any?) } %>
+    <%= field_error amenity, :name %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :icon, class: "form-label" %>
+    <%= form.text_field :icon, class: "form-control font-monospace", placeholder: "bi-wifi",
+          pattern: "bi-[a-z0-9\\-]+", aria: { describedby: "icon_help" } %>
+    <div id="icon_help" class="form-text">
+      Optional. The class of a <%= link_to "Bootstrap Icons", "https://icons.getbootstrap.com/", target: "_blank", rel: "noopener" %>
+      icon, for example <code>bi-wifi</code> or <code>bi-bicycle</code>.
+    </div>
+    <%= field_error amenity, :icon %>
+  </div>
+
+  <div class="form-check form-switch mb-4">
+    <%= form.check_box :active, class: "form-check-input", role: "switch", aria: { describedby: "active_help" } %>
+    <%= form.label :active, "Active in the catalog", class: "form-check-label" %>
+    <div id="active_help" class="form-text">Inactive amenities are no longer offered when a host edits a property.</div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2">
+    <%= form.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", amenities_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

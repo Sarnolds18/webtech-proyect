@@ -1,0 +1,64 @@
+<% content_for :title, "Amenities - Roomies" %>
+
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="fw-bold mb-0">Amenities</h1>
+    <% if current_user&.moderator? %>
+      <%= link_to new_amenity_path, class: "btn btn-primary" do %>
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>New amenity
+      <% end %>
+    <% end %>
+  </div>
+
+  <p class="text-muted">The catalog hosts choose from when they describe a property.</p>
+
+  <% if @amenities.present? %>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Amenity</th>
+            <th scope="col">Icon class</th>
+            <th scope="col">State</th>
+            <th scope="col" class="text-end">Properties</th>
+            <% if current_user&.moderator? %>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @amenities.each do |amenity| %>
+            <% properties = @property_counts.fetch(amenity.id, 0) %>
+            <tr>
+              <td>
+                <% if amenity.icon.present? %>
+                  <i class="bi <%= amenity.icon %> me-2" aria-hidden="true"></i>
+                <% end %>
+                <%= amenity.name %>
+              </td>
+              <td><code><%= amenity.icon.presence || "-" %></code></td>
+              <td>
+                <span class="badge <%= amenity.active? ? "text-bg-success" : "text-bg-secondary" %>">
+                  <%= amenity.active? ? "Active" : "Inactive" %>
+                </span>
+              </td>
+              <td class="text-end"><%= properties %></td>
+              <% if current_user&.moderator? %>
+                <td class="text-end text-nowrap">
+                  <%= link_to "Edit", edit_amenity_path(amenity), class: "btn btn-sm btn-outline-primary",
+                        aria: { label: "Edit #{amenity.name}" } %>
+                  <%= button_to "Delete", amenity_path(amenity), method: :delete, form_class: "d-inline",
+                        class: "btn btn-sm btn-outline-danger", aria: { label: "Delete #{amenity.name}" },
+                        form: { data: { turbo_confirm: properties.zero? ? "Delete #{amenity.name}?" :
+                          "#{amenity.name} is used by #{pluralize(properties, "property")}. Deleting it removes it from them. Delete anyway?" } } %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="mb-0">There are no amenities in the catalog yet.</p>
+  <% end %>
+</div>

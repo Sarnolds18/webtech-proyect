@@ -1,0 +1,29 @@
+<%= form_with model: neighborhood do |form| %>
+  <%= render "shared/form_errors", record: neighborhood %>
+
+  <div class="mb-3">
+    <%= form.label :name, class: "form-label" %>
+    <%= form.text_field :name, class: "form-control", required: true, maxlength: 100, placeholder: "e.g. Providencia",
+          aria: { describedby: ("name_error" if neighborhood.errors[:name].any?) } %>
+    <%= field_error neighborhood, :name %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :city, class: "form-label" %>
+    <%= form.text_field :city, class: "form-control", required: true, maxlength: 100, placeholder: "e.g. Santiago",
+          aria: { describedby: ("city_error" if neighborhood.errors[:city].any?) } %>
+    <%= field_error neighborhood, :city %>
+  </div>
+
+  <div class="form-check form-switch mb-4">
+    <%= form.check_box :active, class: "form-check-input", role: "switch", aria: { describedby: "active_help" } %>
+    <%= form.label :active, "Active in the catalog", class: "form-check-label" %>
+    <div id="active_help" class="form-text">Inactive neighborhoods are not offered for new properties or as a search filter.</div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2">
+    <%= form.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", neighborhood.persisted? ? neighborhood_path(neighborhood) : neighborhoods_path,
+          class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

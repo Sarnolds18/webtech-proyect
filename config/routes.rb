@@ -15,8 +15,18 @@ Rails.application.routes.draw do
   # No login until Assignment 4: the navbar selector picks the user every action is made as.
   resource :acting_user, only: :update
 
-  resources :listings, only: %i[index show]
-  resources :properties, only: %i[index show]
-  resources :neighborhoods, only: %i[index show]
+  # A listing is always created inside a property; once it exists it is addressed on its own.
+  resources :properties do
+    resources :listings, only: %i[new create]
+  end
+  resources :listings, except: %i[new create] do
+    member do
+      patch :publish
+      patch :withdraw
+      patch :mark_rented
+    end
+  end
+  resources :neighborhoods
+  resources :amenities, except: :show
   resources :applications, only: %i[index show]
 end

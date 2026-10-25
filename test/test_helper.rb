@@ -12,8 +12,8 @@ module ActiveSupport
     setup :create_scenario
 
     # A small Providencia/Ñuñoa scenario: one host with two properties, two published listings and a
-    # draft, a pending application with an upcoming visit, and a shortlisted one with a completed,
-    # reviewed visit.
+    # draft, a pending application, and a shortlisted one with a completed, reviewed visit and an
+    # upcoming proposed visit.
     def create_scenario
       @records = Hash.new { |hash, model| hash[model] = {} }
 
@@ -72,8 +72,10 @@ module ActiveSupport
       )
 
       visits = @records[:visits]
-      visits[:completed] = applications[:shortlisted].visits.create!(scheduled_at: 10.days.ago, status: :completed)
-      visits[:proposed] = applications[:pending].visits.create!(scheduled_at: 3.days.from_now)
+      # Visits are created in the future; this one is history, so its date is moved back afterwards.
+      visits[:completed] = applications[:shortlisted].visits.create!(scheduled_at: 1.day.from_now, status: :completed)
+      visits[:completed].update_columns(scheduled_at: 10.days.ago)
+      visits[:proposed] = applications[:shortlisted].visits.create!(scheduled_at: 3.days.from_now)
 
       @records[:reviews][:house_review] = Review.create!(
         visit: visits[:completed], author: users[:seeker], rating: 4, comment: "Lovely garden and a very kind host."

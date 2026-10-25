@@ -1,0 +1,22 @@
+<%# The host proposes a visit to an applicant on the shortlist. VisitsController#create renders the
+    application page again with the errors when the date is not valid. %>
+<div class="card shadow-sm mt-4">
+  <div class="card-body p-4">
+    <h3 class="h5 fw-bold mb-3">Propose a visit</h3>
+
+    <%= form_with model: visit, url: application_visits_path(application) do |form| %>
+      <%= render "shared/form_errors", record: form.object %>
+      <%= field_error form.object, :application %>
+
+      <div class="mb-3">
+        <%= form.label :scheduled_at, "Date and time", class: "form-label" %>
+        <%= form.datetime_local_field :scheduled_at, class: "form-control", required: true,
+              min: Time.current.strftime("%Y-%m-%dT%H:%M") %>
+        <div class="form-text"><%= application.seeker.name %> will be asked to confirm it.</div>
+        <%= field_error form.object, :scheduled_at %>
+      </div>
+
+      <%= form.submit "Propose visit", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

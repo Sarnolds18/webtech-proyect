@@ -1,0 +1,27 @@
+<%# What can be done with a visit now: the seeker confirms it; the host cancels, reschedules or
+    completes it. The model enforces the rules; this only hides the buttons that do not apply. %>
+<div class="d-flex flex-wrap justify-content-end align-items-start gap-2">
+  <% if visit.seeker == current_user && visit.confirmable? %>
+    <%= button_to "Confirm", confirm_visit_path(visit), method: :patch, class: "btn btn-sm btn-success" %>
+  <% end %>
+
+  <% if hosting && visit.completable? %>
+    <%= button_to "Mark completed", complete_visit_path(visit), method: :patch, class: "btn btn-sm btn-outline-success",
+          form: { data: { turbo_confirm: "Did the visit take place?" } } %>
+  <% end %>
+
+  <% if hosting && visit.cancellable? %>
+    <details class="text-start">
+      <summary class="btn btn-sm btn-outline-primary">Reschedule</summary>
+      <%= form_with url: reschedule_visit_path(visit), method: :patch, scope: :visit, class: "d-flex gap-2 mt-2" do |form| %>
+        <%= form.label :scheduled_at, "New date and time", class: "visually-hidden", for: "reschedule_#{visit.id}" %>
+        <%= form.datetime_local_field :scheduled_at, id: "reschedule_#{visit.id}", class: "form-control form-control-sm",
+              required: true, min: Time.current.strftime("%Y-%m-%dT%H:%M") %>
+        <%= form.submit "Move", class: "btn btn-sm btn-primary" %>
+      <% end %>
+    </details>
+
+    <%= button_to "Cancel", cancel_visit_path(visit), method: :patch, class: "btn btn-sm btn-outline-danger",
+          form: { data: { turbo_confirm: "Cancel this visit?" } } %>
+  <% end %>
+</div>

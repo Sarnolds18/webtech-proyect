@@ -424,19 +424,29 @@ l4b.withdrawn!
 
 puts "Seeding visits..."
 
+# The model only takes visits for shortlisted applications, scheduled in the future. Most of these
+# visits are history, so each one is created while its application is shortlisted and with a future
+# date; then the date is moved back (skipping the validation) and the application returns to its
+# final status.
+seed_visit = lambda do |application, status, scheduled_at|
+  final_status = application.status
+  application.update!(status: :shortlisted)
+  visit = application.visits.create!(status: status, scheduled_at: [ scheduled_at, 1.hour.from_now ].max)
+  visit.update_columns(scheduled_at: scheduled_at) if scheduled_at.past? # history: the visit already happened
+  application.update!(status: final_status)
+  visit
+end
+
 # Past visits happen a few days after the application was created, so they always come after it.
 past_visit = lambda do |application, status, days_after|
-  Visit.create!(application: application, status: status, scheduled_at: application.created_at + days_after.days)
+  seed_visit.call(application, status, application.created_at + days_after.days)
 end
 
 # Future visits, one per shortlisted application: proposed, rescheduled and confirmed.
-Visit.create!(application: a_l1a_isidora, status: :proposed,
-              scheduled_at: (Date.current + 2).in_time_zone.change(hour: 18))
+seed_visit.call(a_l1a_isidora, :proposed, (Date.current + 2).in_time_zone.change(hour: 18))
 past_visit.call(a_l2a_francisca, :cancelled, 3)
-Visit.create!(application: a_l2a_francisca, status: :proposed,
-              scheduled_at: (Date.current + 4).in_time_zone.change(hour: 11))
-Visit.create!(application: a_l2b_benjamin, status: :confirmed,
-              scheduled_at: (Date.current + 3).in_time_zone.change(hour: 17))
+seed_visit.call(a_l2a_francisca, :proposed, (Date.current + 4).in_time_zone.change(hour: 11))
+seed_visit.call(a_l2b_benjamin, :confirmed, (Date.current + 3).in_time_zone.change(hour: 17))
 
 # Completed visits: the applicants of the reserved, rented and withdrawn listings who went to see the room.
 v_l1c_sofia     = past_visit.call(a_l1c_sofia, :completed, 4)

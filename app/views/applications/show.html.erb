@@ -1,4 +1,5 @@
 <% content_for :title, "Application to #{@application.listing.title} - Roomies" %>
+<% hosting = @application.listing.host == current_user %>
 
 <div class="container py-4">
   <h1 class="fw-bold mb-2">Application to <%= @application.listing.title %></h1>
@@ -26,13 +27,15 @@
                 <tr>
                   <th scope="col">Date and time</th>
                   <th scope="col">Status</th>
+                  <th scope="col"><span class="visually-hidden">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
                 <% @visits.each do |visit| %>
-                  <tr>
+                  <tr id="<%= dom_id(visit) %>">
                     <td><%= long_date(visit.scheduled_at) %> at <%= visit.scheduled_at.strftime("%H:%M") %></td>
                     <td><%= status_badge(visit.status) %></td>
+                    <td><%= render "visits/actions", visit: visit, hosting: hosting %></td>
                   </tr>
                 <% end %>
               </tbody>
@@ -40,6 +43,11 @@
           </div>
         <% else %>
           <p class="text-muted mb-0">No visit has been proposed for this application yet.</p>
+        <% end %>
+
+        <%# Also after a failed proposal, so the errors are shown next to the field. %>
+        <% if hosting && (@application.shortlisted? || @visit.errors.any?) %>
+          <%= render "visits/form", application: @application, visit: @visit %>
         <% end %>
       </section>
     </div>

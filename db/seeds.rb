@@ -200,7 +200,7 @@ l1b = Listing.create!(
   furnished: true, private_bathroom: false, available_from: Date.current + 30
 )
 l1c = Listing.create!(
-  property: p1, status: :reserved, title: "Room with balcony access",
+  property: p1, status: :published, title: "Room with balcony access",
   description: "Medium room with direct access to the balcony. Already promised to the selected applicant.",
   house_rules: rules.call("No smoking", "Share the cleaning of common areas every week"),
   monthly_rent: 320_000, deposit: 320_000, minimum_stay_months: 6,
@@ -223,7 +223,7 @@ l2b = Listing.create!(
   furnished: true, private_bathroom: false, available_from: Date.current + 5
 )
 l2c = Listing.create!(
-  property: p2, status: :rented, title: "Garden-view room",
+  property: p2, status: :published, title: "Garden-view room",
   description: "Quiet room overlooking the backyard. Taken by a new housemate who moved in recently.",
   house_rules: rules.call("No smoking indoors", "Share the grocery staples"),
   monthly_rent: 280_000, deposit: 280_000, minimum_stay_months: 6,
@@ -248,7 +248,7 @@ l4a = Listing.create!(
   furnished: true, private_bathroom: false, available_from: Date.current + 60
 )
 l4b = Listing.create!(
-  property: p4, status: :withdrawn, title: "Studio-style room downtown",
+  property: p4, status: :published, title: "Studio-style room downtown",
   description: "Promised a private studio with a full kitchen, but the pictures did not match the real room.",
   house_rules: rules.call("No restrictions"),
   monthly_rent: 180_000, deposit: 180_000, minimum_stay_months: 1,
@@ -413,6 +413,12 @@ apply.call(
   l5b, sofia, :pending, days_ago: 1, stay: 8,
   message: "I have a small car and this room with a parking spot would be perfect for my commute to campus."
 )
+
+# Applications are only accepted by published listings, so these rooms were published when people
+# applied and move on to their current status afterwards.
+l1c.reserved!
+l2c.rented!
+l4b.withdrawn!
 
 # --- Visits ----------------------------------------------------------------------------------
 

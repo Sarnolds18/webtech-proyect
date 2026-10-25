@@ -43,6 +43,44 @@ class ApplicationTest < ActiveSupport::TestCase
     assert_includes application.errors[:seeker], "cannot apply to their own listing"
   end
 
+  test "only published listings accept new applications" do
+    application = build_application(listing: listings(:draft))
+
+    assert_not application.valid?
+    assert_includes application.errors[:listing], "is not accepting applications"
+
+    %i[reserved rented withdrawn].each do |status|
+      listings(:pricey).update!(status: status)
+      assert_not build_application.valid?, "#{status} listing should not accept applications"
+    end
+  end
+
+  test "existing applications stay valid after the listing stops being published" do
+    listings(:pricey).reserved!
+
+    assert applications(:shortlisted).reload.valid?
+  end
+
+  test "pending and shortlisted applications can be withdrawn" do
+    %i[pending shortlisted].each do |name|
+      applications(name).withdraw!
+
+      assert applications(name).reload.withdrawn?
+    end
+  end
+
+  test "decided applications cannot be withdrawn" do
+    application = applications(:shortlisted)
+
+    %i[accepted rejected withdrawn].each do |status|
+      application.update!(status: status)
+
+      error = assert_raises(ActiveRecord::RecordInvalid) { application.withdraw! }
+      assert_includes error.record.errors[:status], "cannot be withdrawn once it is #{status}"
+      assert_equal status.to_s, application.reload.status
+    end
+  end
+
   test "database allows only one accepted application per listing" do
     applications(:shortlisted).update!(status: :accepted)
 

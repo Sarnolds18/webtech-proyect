@@ -8,7 +8,7 @@
   </p>
   <h1 class="fw-bold mb-2">Inbox of <%= @listing.title %></h1>
   <p class="d-flex flex-wrap align-items-center gap-2 text-muted mb-4">
-    <%= status_badge(@listing.status) %>
+    <span id="listing_status"><%= status_badge(@listing.status) %></span>
     <span>
       <span id="pending_count" class="fw-semibold text-body"><%= @listing.applications.awaiting_answer.count %></span>
       waiting for an answer

@@ -36,7 +36,8 @@ class ApplicationsController < ApplicationController
                                            status: :unprocessable_entity
   end
 
-  # The inbox actions answer with Turbo Streams that update the row, the pending counter and the flash.
+  # The inbox actions answer with Turbo Streams that update the row, the pending counter, the listing's
+  # status (accepting reserves it) and the flash.
   def shortlist
     answer(:shortlist!, "#{@application.seeker.name} is on the shortlist. You can now propose a visit.")
   end
@@ -84,6 +85,7 @@ class ApplicationsController < ApplicationController
         render turbo_stream: [
           *rows.map { |row| turbo_stream.replace(row, partial: "applications/inbox_row", locals: { application: row }) },
           turbo_stream.update("pending_count", @listing.applications.awaiting_answer.count.to_s),
+          turbo_stream.update("listing_status", helpers.status_badge(@listing.status)),
           turbo_stream.replace("flash", partial: "layouts/flash")
         ]
       end

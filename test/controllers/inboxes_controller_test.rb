@@ -76,6 +76,7 @@ class InboxesControllerTest < ActionDispatch::IntegrationTest
       assert_select "turbo-stream[action=replace][target=#{dom_id(application)}] template", /Rejected/
     end
     assert_select "turbo-stream[action=update][target=pending_count] template", "0"
+    assert_select "turbo-stream[action=update][target=listing_status] template", "Reserved"
     assert_select "turbo-stream[action=replace][target=flash] template", /The listing is now reserved/
   end
 

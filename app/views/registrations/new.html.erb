@@ -1,0 +1,44 @@
+<% content_for :title, "Sign up - Roomies" %>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h3 fw-bold mb-4">Create an account</h1>
+
+          <%= form_with model: @user, url: registration_path do |form| %>
+            <%= render "shared/form_errors", record: @user %>
+
+            <div class="mb-3">
+              <%= form.label :name, class: "form-label" %>
+              <%= form.text_field :name, class: "form-control", required: true, autofocus: true, autocomplete: "name" %>
+              <%= field_error @user, :name %>
+            </div>
+            <div class="mb-3">
+              <%= form.label :email_address, "Email address", class: "form-label" %>
+              <%= form.email_field :email_address, class: "form-control", required: true, autocomplete: "email" %>
+              <%= field_error @user, :email_address %>
+            </div>
+            <div class="mb-3">
+              <%= form.label :password, class: "form-label" %>
+              <%= form.password_field :password, class: "form-control", required: true, minlength: 8,
+                    autocomplete: "new-password", aria: { describedby: "password_help" } %>
+              <div id="password_help" class="form-text">Use at least 8 characters.</div>
+              <%= field_error @user, :password %>
+            </div>
+            <div class="mb-4">
+              <%= form.label :password_confirmation, "Confirm password", class: "form-label" %>
+              <%= form.password_field :password_confirmation, class: "form-control", required: true,
+                    minlength: 8, autocomplete: "new-password" %>
+              <%= field_error @user, :password_confirmation %>
+            </div>
+            <%= form.submit "Sign up", class: "btn btn-primary w-100" %>
+          <% end %>
+
+          <p class="small mt-3 mb-0">Already have an account? <%= link_to "Log in", new_session_path %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

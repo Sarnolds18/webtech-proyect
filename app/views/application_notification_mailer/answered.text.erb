@@ -1,0 +1,15 @@
+Hello <%= @application.seeker.name %>,
+
+Your application for <%= @listing.title %> was <%= @status %>.
+
+<% case @status %>
+<% when "shortlisted" %>
+The host is interested. Check your application for proposed visits.
+<% when "accepted" %>
+The host chose you for this room. The listing is now reserved.
+<% when "rejected" %>
+The host is not continuing with your application. You can keep exploring other rooms on Roomies.
+<% end %>
+
+View your application:
+<%= application_url(@application) %>

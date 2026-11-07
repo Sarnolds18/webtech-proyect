@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ApplicationTest < ActiveSupport::TestCase
+  include ActionMailer::TestHelper
+
   def build_application(**attributes)
     Application.new(
       listing: listings(:pricey), seeker: users(:other_seeker),
@@ -160,5 +162,96 @@ class ApplicationTest < ActiveSupport::TestCase
   test "status scopes" do
     assert_equal [ applications(:pending) ], Application.awaiting_answer.to_a
     assert_equal 2, Application.undecided.count
+  end
+
+  test "creating an application enqueues one notification for the host" do
+    application = build_application
+
+    assert_enqueued_emails 1 do
+      application.save!
+    end
+    assert_enqueued_email_with ApplicationNotificationMailer, :received, params: { application: application }
+  end
+
+  test "an invalid application does not enqueue a notification" do
+    assert_enqueued_emails 0 do
+      assert_not build_application(message: "").save
+    end
+  end
+
+  test "shortlisting and rejecting notify the seeker with the answer that triggered the email" do
+    application = applications(:pending)
+
+    assert_enqueued_emails 1 do
+      application.shortlist!
+    end
+    assert_enqueued_email_with ApplicationNotificationMailer, :answered,
+      params: { application: application, status: "shortlisted" }
+
+    assert_enqueued_emails 1 do
+      application.reject!
+    end
+    assert_enqueued_email_with ApplicationNotificationMailer, :answered,
+      params: { application: application, status: "rejected" }
+  end
+
+  test "editing a message or withdrawing an application does not send an answer notification" do
+    application = applications(:pending)
+
+    assert_enqueued_emails 0 do
+      application.update!(message: "Here is some more information.")
+      application.withdraw!
+    end
+  end
+
+  test "accepting notifies the accepted seeker and every automatically rejected seeker" do
+    application = applications(:shortlisted)
+    pending_rival = build_application
+    pending_rival.save!
+    shortlisted_rival = build_application(seeker: users(:moderator), status: :shortlisted)
+    shortlisted_rival.save!
+
+    assert_enqueued_emails 3 do
+      application.accept!
+    end
+
+    assert_enqueued_email_with ApplicationNotificationMailer, :answered,
+      params: { application: application, status: "accepted" }
+    [ pending_rival, shortlisted_rival ].each do |rival|
+      assert rival.reload.rejected?
+      assert_enqueued_email_with ApplicationNotificationMailer, :answered,
+        params: { application: rival, status: "rejected" }
+    end
+  end
+
+  test "a failed acceptance enqueues no emails and rolls back the automatic rejections" do
+    application = applications(:shortlisted)
+    rival = build_application
+    rival.save!
+    application.listing.define_singleton_method(:reserved!) { raise ActiveRecord::RecordInvalid, self }
+
+    assert_enqueued_emails 0 do
+      assert_raises(ActiveRecord::RecordInvalid) { application.accept! }
+    end
+
+    assert application.reload.shortlisted?
+    assert rival.reload.pending?
+    assert application.listing.reload.published?
+  end
+
+  test "rolling back an outer transaction does not enqueue answer notifications" do
+    application = applications(:shortlisted)
+    rival = build_application
+    rival.save!
+
+    assert_enqueued_emails 0 do
+      Application.transaction(requires_new: true) do
+        application.accept!
+        raise ActiveRecord::Rollback
+      end
+    end
+
+    assert application.reload.shortlisted?
+    assert rival.reload.pending?
   end
 end

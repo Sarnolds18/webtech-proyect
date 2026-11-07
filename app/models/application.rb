@@ -17,6 +17,9 @@ class Application < ApplicationRecord
   validate :seeker_is_not_the_host
   validate :listing_must_be_published, on: :create
 
+  after_create_commit :notify_host
+  after_update_commit :notify_seeker, if: -> { saved_change_to_status? && (shortlisted? || accepted? || rejected?) }
+
   # Applications the host has not answered yet (same as `pending`, named for the inbox).
   scope :awaiting_answer, -> { where(status: :pending) }
   # Applications still in play: the host can still accept or reject them.
@@ -67,12 +70,21 @@ class Application < ApplicationRecord
       transition_error!(:listing, "is not accepting applications") unless listing.published?
 
       accepted!
-      listing.applications.undecided.where.not(id: id).update_all(status: "rejected", updated_at: Time.current)
+      # Use model updates so every rejection also notifies its seeker after this transaction commits.
+      listing.applications.undecided.where.not(id: id).find_each(&:reject!)
       listing.reserved!
     end
   end
 
   private
+
+  def notify_host
+    ApplicationNotificationMailer.with(application: self).received.deliver_later
+  end
+
+  def notify_seeker
+    ApplicationNotificationMailer.with(application: self, status: status).answered.deliver_later
+  end
 
   def transition_error!(attribute, message)
     errors.add(attribute, message)

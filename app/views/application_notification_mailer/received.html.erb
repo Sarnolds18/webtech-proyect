@@ -1,0 +1,11 @@
+<h1 style="font-family: sans-serif; color: #0d6efd;">New application</h1>
+<p>Hello <%= @listing.host.name %>,</p>
+<p><strong><%= @application.seeker.name %></strong> applied for <strong><%= @listing.title %></strong>.</p>
+<p>Move-in date: <%= @application.move_in_date.strftime("%B %-d, %Y") %><br>
+Intended stay: <%= pluralize(@application.stay_months, "month") %></p>
+<h2 style="font-family: sans-serif; font-size: 18px;">Message from the applicant</h2>
+<%= simple_format @application.message %>
+<p style="margin: 24px 0;">
+  <%= link_to "Open your inbox", listing_inbox_url(@listing),
+        style: "display: inline-block; padding: 12px 20px; background-color: #0d6efd; color: #ffffff; text-decoration: none; border-radius: 6px;" %>
+</p>

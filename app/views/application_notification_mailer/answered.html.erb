@@ -1,0 +1,15 @@
+<h1 style="font-family: sans-serif; color: #0d6efd;">Your application was <%= @status %></h1>
+<p>Hello <%= @application.seeker.name %>,</p>
+<p>Your application for <strong><%= @listing.title %></strong> was <strong><%= @status %></strong>.</p>
+<% case @status %>
+<% when "shortlisted" %>
+  <p>The host is interested. Check your application for proposed visits.</p>
+<% when "accepted" %>
+  <p>The host chose you for this room. The listing is now reserved.</p>
+<% when "rejected" %>
+  <p>The host is not continuing with your application. You can keep exploring other rooms on Roomies.</p>
+<% end %>
+<p style="margin: 24px 0;">
+  <%= link_to "View your application", application_url(@application),
+        style: "display: inline-block; padding: 12px 20px; background-color: #0d6efd; color: #ffffff; text-decoration: none; border-radius: 6px;" %>
+</p>

@@ -1,0 +1,12 @@
+Hello <%= @listing.host.name %>,
+
+<%= @application.seeker.name %> applied for <%= @listing.title %>.
+
+Move-in date: <%= @application.move_in_date.strftime("%B %-d, %Y") %>
+Intended stay: <%= pluralize(@application.stay_months, "month") %>
+
+Message from the applicant:
+<%= @application.message %>
+
+Open your inbox:
+<%= listing_inbox_url(@listing) %>

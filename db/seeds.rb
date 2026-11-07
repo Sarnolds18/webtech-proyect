@@ -5,6 +5,11 @@
 #
 #   bin/rails db:seed
 
+# Sample applications must not email their hosts and seekers: the addresses are fake, and in
+# production the jobs would go out through SMTP. This only lasts while the seeds run.
+Application.skip_callback(:commit, :after, :notify_host)
+Application.skip_callback(:commit, :after, :notify_seeker)
+
 puts "Cleaning database..."
 
 # Photographs: drop the attachments and variant records, then each blob together with its file in storage/.

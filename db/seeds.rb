@@ -184,7 +184,7 @@ puts "Seeding listings..."
 # Description and house rules are Action Text rich text, so they take HTML: house rules are a bullet list.
 rules = ->(*items) { "<ul>#{items.map { |item| "<li>#{item}.</li>" }.join}</ul>" }
 
-# Property 1 (Providencia): two open rooms and one already reserved.
+# Property 1 (Providencia): two open rooms, one already reserved and a draft for permission checks.
 l1a = Listing.create!(
   property: p1, status: :published, title: "Sunny room with private bathroom",
   description: "<strong>Large room</strong> with a south-facing window and <em>its own bathroom</em>. Furnished with a double bed, desk and wardrobe.",
@@ -206,8 +206,15 @@ l1c = Listing.create!(
   monthly_rent: 320_000, deposit: 320_000, minimum_stay_months: 6,
   furnished: false, private_bathroom: false, available_from: Date.current + 20
 )
+l1draft = Listing.create!(
+  property: p1, title: "Valentina's draft room in Providencia",
+  description: "Draft: preparing a new room listing and arranging the photographs.",
+  house_rules: rules.call("No smoking indoors", "Quiet hours after 11 pm"),
+  monthly_rent: 300_000, deposit: 300_000, available_from: Date.current + 50,
+  minimum_stay_months: 6, furnished: true
+)
 
-# Property 2 (Ñuñoa): two open rooms (one with several applicants) and one already rented.
+# Property 2 (Ñuñoa): two open rooms, one already rented and Matías's own draft.
 l2a = Listing.create!(
   property: p2, status: :published, title: "Large room with private bathroom",
   description: "<strong>The biggest room of the house</strong>, on the ground floor, with its own bathroom and a door to the garden. Unfurnished, so bring your own style.",
@@ -228,6 +235,13 @@ l2c = Listing.create!(
   house_rules: rules.call("No smoking indoors", "Share the grocery staples"),
   monthly_rent: 280_000, deposit: 280_000, minimum_stay_months: 6,
   furnished: true, private_bathroom: false, available_from: Date.current + 10
+)
+l2draft = Listing.create!(
+  property: p2, title: "Matías's draft room in Ñuñoa",
+  description: "Draft: checking the furniture and availability before publishing.",
+  house_rules: rules.call("Keep shared spaces tidy", "Pets welcome with the host's approval"),
+  monthly_rent: 270_000, deposit: 270_000, available_from: Date.current + 55,
+  minimum_stay_months: 3, furnished: false
 )
 
 # Property 3 (Las Condes)
@@ -291,8 +305,8 @@ l4b.update_columns(available_from: Date.current - 10)
 
 puts "Attaching photographs..."
 
-# Every listing gets the sample photographs in db/seeds/photos, starting from a different one so the
-# cards do not all look the same. The draft is still missing its photographs (as its description says).
+# Published and historical listings get sample photographs, starting from a different one so the
+# cards do not all look the same. Drafts are still being prepared and have no photographs yet.
 SEED_PHOTOS = Dir[Rails.root.join("db/seeds/photos/*.jpg")].sort.freeze
 
 [ l1a, l1b, l1c, l2a, l2b, l2c, l3, l4b, l5a, l5b, l6 ].each_with_index do |listing, index|
@@ -305,8 +319,8 @@ end
 
 puts "Seeding applications..."
 
-# Applications are created already in their final status (accepting one is app logic that comes
-# later), with `created_at` in the past so that visits and reviews can be dated coherently.
+# Applications are created in their historical status, with `created_at` in the past so that
+# visits and reviews can be dated coherently. Interactive decisions use the model's transitions.
 apply = lambda do |listing, seeker, status, message:, days_ago:, stay: nil, move_in: nil|
   Application.create!(
     listing: listing, seeker: seeker, status: status, message: message,
@@ -451,7 +465,8 @@ seed_visit.call(a_l2b_benjamin, :confirmed, (Date.current + 3).in_time_zone.chan
 # Completed visits: the applicants of the reserved, rented and withdrawn listings who went to see the room.
 v_l1c_sofia     = past_visit.call(a_l1c_sofia, :completed, 4)
 v_l1c_benjamin  = past_visit.call(a_l1c_benjamin, :completed, 3)
-past_visit.call(a_l1c_francisca, :completed, 5)
+# Leave this completed visit without a review so Francisca can exercise the review form.
+v_l1c_francisca = past_visit.call(a_l1c_francisca, :completed, 5)
 v_l2c_nicolas   = past_visit.call(a_l2c_nicolas, :completed, 5)
 v_l2c_isidora   = past_visit.call(a_l2c_isidora, :completed, 4)
 v_l4b_benjamin  = past_visit.call(a_l4b_benjamin, :completed, 2)
@@ -594,3 +609,13 @@ puts "\nSeed complete:"
   User, Neighborhood, Amenity, Property, PropertyAmenity, Listing, Application, Visit, Review,
   ReviewReply, SavedListing, Report, ModerationAction
 ].each { |model| puts format("  %-18<name>s %<count>d", name: model.name, count: model.count) }
+
+puts "\nAssignment 4 verification (all passwords: password123):"
+puts "  Valentina's draft: /listings/#{l1draft.id} (valentina.soto@roomies.test)"
+puts "  Matías's draft:    /listings/#{l2draft.id} (matias.perez@roomies.test)"
+puts "  Host inbox:        /listings/#{l2a.id}/inbox (matias.perez@roomies.test)"
+puts "  Sofía's application: /applications/#{a_l2a_sofia.id} (sofia.araya@roomies.test)"
+puts "  Review form:       /properties/#{p1.id} (francisca.lagos@roomies.test, completed visit #{v_l1c_francisca.id})"
+puts "  Seeker without properties: isidora.campos@roomies.test"
+puts "  Moderator: camila.rojas@roomies.test (#{Report.unresolved.count} open reports)"
+puts "  Suspended account: martin.silva@roomies.test (cannot sign in)"

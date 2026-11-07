@@ -12,31 +12,31 @@ Roomies is a platform that connects people with a free room in a shared home to 
 
 ```
 webtech-proyect/
-├── app/                      # Assignment 2 — Rails application
-│   ├── models/               #   13 models (associations, validations, enums, scopes)
-│   ├── controllers/          #   read-only controllers (home, listings, properties, neighborhoods, applications)
-│   ├── views/                #   ERB views, partials and layout
-│   ├── helpers/              #   view helpers
-│   └── assets/               #   Bootstrap (Sass) and images
-├── config/                   # Assignment 2 — routes and Rails configuration
-├── db/                       # Assignment 2 — migrations, schema and seeds
-│   ├── migrate/
+├── app/
+│   ├── models/               # 13 domain models, Session and Current
+│   ├── controllers/          # Public browsing, CRUD, accounts and profile
+│   ├── mailers/              # Password reset and application notifications
+│   ├── views/                # Bootstrap ERB views, email templates and shared partials
+│   ├── javascript/           # Turbo, Stimulus and importmap entry points
+│   ├── helpers/              # Formatting, photos and validation errors
+│   └── assets/               # Bootstrap Sass, icons and images
+├── config/                   # Routes, PostgreSQL, email, jobs and Kamal configuration
+├── db/
+│   ├── migrate/              # Domain tables, Active Storage, Action Text and sessions
 │   ├── schema.rb
-│   └── seeds.rb              #   sample data for every table
-├── test/
-│   └── models/               #   model tests (validations, scopes, database constraints)
-├── landing/                  # Assignment 1 — static landing page (kept as history; `/` is now its Rails version)
-│   ├── index.html
-│   ├── css/
-│   │   └── styles.css
-│   └── assets/                # images used by the landing page
+│   └── seeds.rb              # Repeatable sample data and permission verification URLs
+├── test/                     # Model, controller, helper and mailer tests; email previews
+├── landing/                  # Assignment 1 static page, kept as history
 ├── docs/
-│   ├── USER_STORIES.md       # Assignment 1 — user stories (visitor, member, moderator)
-│   ├── domain-model.dbml     # domain model source (dbdiagram.io / DBML format), updated in Assignment 2
-│   ├── domain-model.png      # domain model diagram (exported image), updated in Assignment 2
-│   └── design-decisions.md   # modeling decisions, and what changed since Assignment 1
-└── README.md                 # this file
+│   ├── USER_STORIES.md
+│   ├── domain-model.dbml     # Domain model source for dbdiagram.io
+│   ├── domain-model.png
+│   └── design-decisions.md
+└── README.md
 ```
+
+Pundit policies (`app/policies/`), moderation controllers and the versioned API
+(`app/controllers/api/v1/`) are being integrated separately by the other team members.
 
 ## Getting Started
 
@@ -73,7 +73,17 @@ bin/dev
 bin/rails test
 ```
 
-The model tests cover validations, enums, scopes and database constraints (for example, only one accepted application per listing).
+The suite covers model validations and database constraints, CRUD and Hotwire flows, sign up,
+sessions, password reset, profile ownership and notification emails. The test scenario is built
+with `create!` in `test/test_helper.rb`, rather than YAML fixtures.
+
+Additional local checks:
+
+```bash
+bin/rubocop
+bin/brakeman --no-pager
+bin/bundler-audit
+```
 
 ### Photographs
 
@@ -97,7 +107,12 @@ bin/rails db:drop db:create db:migrate db:seed
 
 ### Test users
 
-Every seeded user has the password **`password123`**. Login arrives in Assignment 4; until then, choose who you are acting as with the **Acting as** selector in the navbar. Every action (publishing, applying, answering an application) is made as that user, and choosing *Visitor* browses as someone who is not signed in.
+Sign in at **`/session/new`**. Every seeded user has the password **`password123`**.
+For the required role checks, use **Sofía Araya** (`sofia.araya@roomies.test`) as a member and
+**Camila Rojas** (`camila.rojas@roomies.test`) as a moderator. Martín Silva is suspended and
+cannot sign in. Sign out to browse as a visitor; the acting user selector has been removed.
+
+Host and seeker describe how a member uses the app; they are not additional values of `User.role`.
 
 | Role | Name | Email |
 |---|---|---|
@@ -120,12 +135,99 @@ Every seeded user has the password **`password123`**. Login arrives in Assignmen
 |---|---|
 | `/` | Home (the landing page) |
 | `/listings` | Published listings, with filters by neighborhood, maximum rent and availability date |
-| `/listings/:id` | Listing details (any status) |
+| `/listings/:id` | Listing details; a draft is restricted to its host (and a moderator once Pundit is integrated) |
 | `/properties`, `/properties/:id` | Properties, their listings and reviews |
 | `/neighborhoods`, `/neighborhoods/:id` | Neighborhoods and their listings |
-| `/applications`, `/applications/:id` | Applications and their visits |
+| `/applications`, `/applications/:id` | Applications and their visits; scoped privacy is part of the Pundit integration |
+| `/listings/:listing_id/inbox` | Host inbox, with Turbo Stream answers |
+| `/amenities` | Amenity catalog |
+| `/session/new` | Sign in; sign out is available in the user menu |
+| `/sign_up` | Create an active member account |
+| `/passwords/new` | Request a password reset email |
+| `/profile`, `/profile/edit` | View and edit the signed-in member's profile |
+| `/rails/mailers` | Email previews in development |
 
-The application is **read-only** in Assignment 2: nothing can be created, edited or deleted from the browser yet. The applications pages are public until login and permissions arrive in Assignment 4 (an application should only be visible to its seeker and the host of the listing).
+The app supports create, edit and delete flows, listing lifecycle actions, applications, visits
+and reviews. Profile changes accept only name, email, phone, bio and optional password fields.
+Passwords need at least 8 characters; changing one in the profile requires the current password.
+A bio may contain up to 500 characters. Phone numbers are optional and accept a leading `+`,
+digits, spaces and hyphens (7–20 characters).
+
+The other team members' integrations add `/reports` (moderation), `/api/v1/listings`,
+`/api/v1/listings/:id`, `/api/v1/neighborhoods` and `/api/v1/amenities` (public JSON data).
+These endpoints are not present in this checkout yet.
+
+## Roles and permissions
+
+The table below is the Assignment 4 authorization contract. Authentication is implemented;
+Pundit policies, scopes and moderation are a separate integration still pending in this checkout.
+In particular, the application index and show pages still use the earlier public queries until
+that integration lands. The privacy checks below must be verified again with the complete code.
+
+| Action | Visitor | Member | Moderator |
+|---|---|---|---|
+| Browse and search published listings | Yes | Yes | Yes |
+| See a draft listing | No | Own only | Any |
+| Create a property or listing | No | Yes; a listing belongs to their property | Same as member |
+| Edit or delete a property or listing | No | Own only | Any, subject to model lifecycle rules |
+| Apply to a published listing | No | Except their own | Same as member |
+| See applications | No | Their own submissions and applications to their listings | Any |
+| Shortlist, reject or accept | No | Host of the listing | No extra permission from the moderator role |
+| Arrange visits | No | Host proposes/reschedules/completes; applicant confirms; either may cancel | No extra permission from the moderator role |
+| Write a review | No | After their own completed visit, never on their own property | No extra permission from the moderator role |
+| Delete a review | No | Own only | Any |
+| Report a listing | No | Except their own | Same as member |
+| Resolve reports | No | No | Yes |
+| Manage neighborhoods and amenities | No | No | Yes |
+
+A visitor is someone who is signed out, not a stored role. Members can act as hosts and seekers
+under the same account. Ownership determines most permissions.
+
+## How to verify the permissions
+
+`bin/rails db:seed` prints actual URLs for the records below; ids change when the seed is rerun.
+Every account uses `password123`. The cross-account denials and moderation steps require the
+Pundit integration described above.
+
+1. As a visitor, open the home page, listings, properties and reviews. Creating a property or
+   opening `/profile` must redirect to sign in. Create an account at `/sign_up`, edit its profile,
+   sign out and sign back in. Supplying a role during registration must not create a moderator.
+2. Sign in as Valentina. Her draft is **Valentina's draft room in Providencia**, linked from her
+   property page. Save its URL, open it as Sofía and expect access denied. Repeat with Matías's
+   draft in Ñuñoa. Once policies are integrated, Camila must be able to view either draft.
+3. Sign in as Matías and open the printed inbox URL for **Large room with private bathroom**.
+   Shortlist a pending application, propose a visit, then accept an applicant. The listing must
+   become reserved and the other pending/shortlisted applications must become rejected together.
+   Check that the Turbo Stream updates the rows, counter and listing status.
+4. Sign in as Sofía. Check her sent applications and save one of their URLs. Sign in as Isidora
+   (a member without properties): the URL of Sofía's application must be denied and its message
+   must not appear in Isidora's list once policy scopes are integrated.
+5. Sign in as Isidora to confirm her proposed visit, or as Francisca to write a review on
+   **Bright apartment near Metro Pedro de Valdivia**. Francisca already has a completed visit
+   without a review; the printed property URL leads to the review form.
+6. Sign in as Camila to resolve an open report, withdraw a reported listing, delete a review and
+   manage catalogs. She must not acquire permission to accept another host's applicants simply
+   by being a moderator. Check the audit records after moderation actions.
+7. Try signing in as Martín: his suspended account must be refused. Request a password reset for
+   Sofía, open the email, change her password and check that previous sessions stop working.
+
+## Emails
+
+Password resets and application notifications use Action Mailer with `deliver_later` through
+Active Job. A new application emails its host; a shortlist, acceptance or rejection emails the
+seeker. Accepting an applicant also emails every automatically rejected seeker. Notifications
+are enqueued after commit, so a rolled-back acceptance sends no answer emails.
+
+In development, messages are written to **`tmp/mails/`** rather than sent by SMTP. Restart
+`bin/dev` after email configuration changes. Visit **`/rails/mailers`** for password reset and
+application notification previews; the previews use the seeded Sofía account and her applications.
+The development queue adapter is `:async`, which runs jobs inside the Rails process without a
+separate worker. Seeding also runs the application's notification callbacks, so sample-data
+emails can appear in `tmp/mails/`.
+
+Production uses Solid Queue. The Kamal configuration sets `SOLID_QUEUE_IN_PUMA: true` to start
+its supervisor in Puma. Before deployment, configure the production mail host, sender and SMTP
+credentials; the current production configuration still contains placeholder values.
 
 ### Common problems
 
@@ -150,6 +252,26 @@ The application is **read-only** in Assignment 2: nothing can be created, edited
 - **Seeds**: [`db/seeds.rb`](./db/seeds.rb) populates every table with realistic Santiago data: listings in every lifecycle state, applications in every status, completed visits, reviews with host replies, saved listings, reports and moderation actions.
 
 The static landing page in [`landing/`](./landing) is kept as history; the app's root page (`/`) is now its Rails version.
+
+## Assignment 3 — CRUD, Photographs, Rich Text, and Hotwire
+
+- Property and listing forms, amenity selection, catalog CRUD and inline validation errors.
+- Multiple validated photographs with Active Storage variants, and Action Text for descriptions
+  and house rules.
+- Applications created on the listing page inside a Turbo Frame; the host inbox answers them
+  with Turbo Streams that update all affected rows and the pending counter.
+- Atomic applicant acceptance, listing lifecycle actions, visits and reviews after completed visits.
+
+## Assignment 4 — Accounts, Permissions, API, and Notifications
+
+- Native Rails 8 authentication, sign up/in/out and password reset by email. The acting user
+  selector is removed; suspended members cannot sign in or resume a session.
+- An editable profile for the signed-in member, with current-password verification for password changes.
+- Notification emails through Active Job, HTML/text templates, development file delivery and previews.
+- Seeds with members and moderators, separate hosts' drafts, competing applicants, a completed
+  visit without a review, open reports and printed verification URLs.
+- Pundit policies/scopes, moderation, the public API and search with `fetch` are owned by the
+  other team members and still need integration and final verification in this checkout.
 
 ## After Pulling Changes
 

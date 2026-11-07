@@ -1,6 +1,10 @@
-<p>
-  You can reset your password on
-  <%= link_to "this password reset page", edit_password_url(@user.password_reset_token) %>.
+<h1 style="font-family: sans-serif; color: #0d6efd;">Reset your Roomies password</h1>
 
-  This link will expire in <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>.
+<p>Hello <%= @user.name %>,</p>
+<p>We received a request to reset the password for your Roomies account.</p>
+<p style="margin: 24px 0;">
+  <%= link_to "Reset password", edit_password_url(@user.password_reset_token),
+        style: "display: inline-block; padding: 12px 20px; background-color: #0d6efd; color: #ffffff; text-decoration: none; border-radius: 6px;" %>
 </p>
+<p>This link expires in <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>.</p>
+<p>If you did not request this change, you can ignore this email. Your password will stay the same.</p>

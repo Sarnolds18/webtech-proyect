@@ -19,6 +19,8 @@ class User < ApplicationRecord
 
   validates :name, presence: true
   validates :password, length: { minimum: 8 }, allow_nil: true
+  validates :bio, length: { maximum: 500 }
+  validates :phone, format: { with: /\A\+?[\d\s-]{7,20}\z/ }, allow_blank: true
   validates :email_address, presence: true,
                             uniqueness: { case_sensitive: false },
                             format: { with: URI::MailTo::EMAIL_REGEXP }

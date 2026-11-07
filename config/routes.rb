@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   resource :session, only: %i[new create destroy]
   resource :registration, only: %i[new create], path: "sign_up", path_names: { new: "" }
   resources :passwords, param: :token, only: %i[new create edit update]
+  resource :profile, only: %i[show edit update]
 
   # A listing is always created inside a property; once it exists it is addressed on its own.
   resources :properties do

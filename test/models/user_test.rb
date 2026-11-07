@@ -42,4 +42,29 @@ class UserTest < ActiveSupport::TestCase
     assert_equal 2, users(:host).properties.count
     assert_equal 2, users(:seeker).applications.count
   end
+
+  test "a bio can contain up to 500 characters" do
+    user = users(:seeker)
+    user.bio = "a" * 501
+    assert_not user.valid?
+    assert user.errors.added?(:bio, :too_long, count: 500)
+
+    user.bio = "a" * 500
+    assert user.valid?
+  end
+
+  test "phone numbers accept local and international formats or a blank value" do
+    user = users(:seeker)
+
+    [ nil, "", "+56 9 5550 3001", "955503001", "555-0301" ].each do |phone|
+      user.phone = phone
+      assert user.valid?, "Expected #{phone.inspect} to be valid"
+    end
+
+    [ "call me", "123", "+56 9 5550 3001 ext 2" ].each do |phone|
+      user.phone = phone
+      assert_not user.valid?, "Expected #{phone.inspect} to be invalid"
+      assert user.errors[:phone].any?
+    end
+  end
 end

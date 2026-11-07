@@ -1,0 +1,66 @@
+<% content_for :title, "My profile - Roomies" %>
+
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="fw-bold mb-0">My profile</h1>
+    <%= link_to "Edit profile", edit_profile_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <section class="card shadow-sm" aria-labelledby="account-heading">
+        <div class="card-body p-4">
+          <h2 id="account-heading" class="h4 fw-bold"><%= @user.name %></h2>
+          <p><span class="badge text-bg-<%= @user.moderator? ? "warning" : "primary" %>"><%= @user.role.humanize %></span></p>
+          <dl>
+            <dt>Email address</dt>
+            <dd class="text-break"><%= @user.email_address %></dd>
+            <dt>Phone</dt>
+            <dd><%= @user.phone.presence || "Not provided" %></dd>
+          </dl>
+          <h3 class="h6 fw-bold">About me</h3>
+          <%= simple_format(@user.bio.presence || "You have not added a bio yet.", class: "mb-0 text-break") %>
+        </div>
+      </section>
+    </div>
+
+    <div class="col-lg-8">
+      <section class="card shadow-sm mb-4" aria-labelledby="properties-heading">
+        <div class="card-body p-4">
+          <h2 id="properties-heading" class="h5 fw-bold mb-3">My properties</h2>
+          <% if @properties.any? %>
+            <ul class="list-group list-group-flush">
+              <% @properties.each do |property| %>
+                <li class="list-group-item px-0">
+                  <%= link_to property.title, property_path(property) %>
+                  <span class="d-block small text-muted"><%= property.neighborhood.name %></span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-muted">You have not published a property yet.</p>
+          <% end %>
+          <%= link_to "Add a property", new_property_path, class: "btn btn-outline-primary btn-sm mt-3" %>
+        </div>
+      </section>
+
+      <section class="card shadow-sm" aria-labelledby="applications-heading">
+        <div class="card-body p-4">
+          <h2 id="applications-heading" class="h5 fw-bold mb-3">Applications I sent</h2>
+          <% if @applications.any? %>
+            <ul class="list-group list-group-flush">
+              <% @applications.each do |application| %>
+                <li class="list-group-item px-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                  <%= link_to application.listing.title, application_path(application) %>
+                  <%= status_badge(application.status) %>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-muted mb-0">You have not applied to a room yet.</p>
+          <% end %>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,8 @@
       <% if current_user.moderator? %><span class="badge text-bg-warning ms-1">Moderator</span><% end %>
     </button>
     <ul class="dropdown-menu dropdown-menu-end">
+      <li><%= link_to "Profile", profile_path, class: "dropdown-item" %></li>
+      <li><hr class="dropdown-divider"></li>
       <li><%= button_to "Sign out", session_path, method: :delete, class: "dropdown-item" %></li>
     </ul>
   </li>

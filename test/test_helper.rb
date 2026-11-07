@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require_relative "test_helpers/session_test_helper"
 
 module ActiveSupport
   class TestCase
@@ -91,9 +92,9 @@ end
 
 module ActionDispatch
   class IntegrationTest
-    # Picks the user in the navbar selector, the stand-in for logging in until Assignment 4.
+    # Signs in with a real session cookie, keeping the helper used by the controller tests.
     def act_as(user)
-      patch acting_user_path, params: { user_id: user.id }
+      sign_in_as(user)
     end
   end
 end

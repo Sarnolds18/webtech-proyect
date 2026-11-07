@@ -12,8 +12,9 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "home#index"
 
-  # No login until Assignment 4: the navbar selector picks the user every action is made as.
-  resource :acting_user, only: :update
+  # Accounts: real sessions replace the acting user selector.
+  resource :session, only: %i[new create destroy]
+  resources :passwords, param: :token, only: %i[new create edit update]
 
   # A listing is always created inside a property; once it exists it is addressed on its own.
   resources :properties do

@@ -11,11 +11,11 @@ class PropertiesControllerTest < ActionDispatch::IntegrationTest
       amenity_ids: [ amenities(:wifi).id, amenities(:washer).id ] }.merge(overrides)
   end
 
-  test "visitors are asked to choose a user before creating a property" do
+  test "visitors are sent to sign in before creating a property" do
     get new_property_path
 
-    assert_redirected_to root_path
-    assert_equal "Choose a user in the navbar first.", flash[:alert]
+    assert_redirected_to new_session_path
+    assert_equal "Sign in or create an account to continue.", flash[:alert]
   end
 
   test "the acting user creates a property with amenities and becomes its host" do

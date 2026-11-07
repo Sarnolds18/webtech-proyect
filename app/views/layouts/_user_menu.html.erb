@@ -1,0 +1,13 @@
+<% if current_user %>
+  <li class="nav-item dropdown ms-lg-2">
+    <button type="button" class="nav-link dropdown-toggle btn btn-link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-person-circle me-1" aria-hidden="true"></i><%= current_user.name %>
+      <% if current_user.moderator? %><span class="badge text-bg-warning ms-1">Moderator</span><% end %>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li><%= button_to "Sign out", session_path, method: :delete, class: "dropdown-item" %></li>
+    </ul>
+  </li>
+<% else %>
+  <li class="nav-item ms-lg-2"><%= link_to "Log in", new_session_path, class: "nav-link" %></li>
+<% end %>

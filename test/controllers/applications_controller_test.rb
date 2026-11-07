@@ -14,10 +14,10 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     { "Turbo-Frame" => "application_block" }
   end
 
-  test "visitors are asked to choose a user on the listing page" do
+  test "visitors are invited to sign in on the listing page" do
     get listing_path(@listing)
 
-    assert_select "turbo-frame#application_block", /Choose a user in the navbar/
+    assert_select "turbo-frame#application_block", /Sign in/
     assert_select "turbo-frame#application_block form", count: 0
   end
 
@@ -89,7 +89,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
       post listing_applications_path(@listing), params: { application: application_params }
     end
 
-    assert_equal "Choose a user in the navbar first.", flash[:alert]
+    assert_equal "Sign in or create an account to continue.", flash[:alert]
   end
 
   test "the seeker withdraws their application" do

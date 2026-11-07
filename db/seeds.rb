@@ -15,7 +15,7 @@ ActiveStorage::Blob.find_each(&:purge)
 # Delete in reverse dependency order because of the foreign keys.
 [
   ModerationAction, Report, SavedListing, ReviewReply, Review, Visit, Application, ActionText::RichText,
-  Listing, PropertyAmenity, Property, Amenity, Neighborhood, User
+  Listing, PropertyAmenity, Property, Amenity, Neighborhood, Session, User
 ].each(&:delete_all)
 
 # --- Neighborhoods ---------------------------------------------------------------------------

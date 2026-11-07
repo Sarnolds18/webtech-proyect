@@ -1,0 +1,28 @@
+<% content_for :title, "Log in - Roomies" %>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h3 fw-bold mb-4">Log in</h1>
+
+          <%= form_with url: session_path do |form| %>
+            <div class="mb-3">
+              <%= form.label :email_address, "Email address", class: "form-label" %>
+              <%= form.email_field :email_address, class: "form-control", required: true, autofocus: true,
+                    autocomplete: "username", value: params[:email_address] %>
+            </div>
+            <div class="mb-4">
+              <%= form.label :password, class: "form-label" %>
+              <%= form.password_field :password, class: "form-control", required: true, autocomplete: "current-password" %>
+            </div>
+            <%= form.submit "Log in", class: "btn btn-primary w-100" %>
+          <% end %>
+
+          <p class="small mt-3 mb-0"><%= link_to "Forgot your password?", new_password_path %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

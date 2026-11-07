@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   has_secure_password
+  has_many :sessions, dependent: :destroy
 
   has_many :properties, foreign_key: :host_id, inverse_of: :host, dependent: :restrict_with_error
   has_many :applications, foreign_key: :seeker_id, inverse_of: :seeker, dependent: :destroy

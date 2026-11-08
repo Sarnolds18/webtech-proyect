@@ -1,0 +1,7 @@
+<%# When the denied request came from a Turbo Frame (e.g. applying to a listing), the answer is that
+    same frame; without it Turbo would only show "Content missing". %>
+<%= turbo_frame_tag request.headers["Turbo-Frame"] do %>
+  <div class="alert alert-danger mb-0" role="alert">
+    <strong>Access denied.</strong> <%= @denied_reason %>
+  </div>
+<% end %>

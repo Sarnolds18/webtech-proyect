@@ -1,0 +1,19 @@
+<% content_for :title, "Access denied - Roomies" %>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6 text-center">
+      <i class="bi bi-shield-lock display-4 text-danger" aria-hidden="true"></i>
+      <h1 class="fw-bold mt-3 mb-3">Access denied</h1>
+      <p class="lead mb-2"><%= @denied_reason %></p>
+      <p class="text-muted mb-4">
+        You are signed in as <strong><%= current_user.name %></strong>, and this account is not allowed to do that.
+        Nothing was changed.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <%= link_to "Go to the home page", root_path, class: "btn btn-primary" %>
+        <%= link_to "Search rooms", listings_path, class: "btn btn-outline-primary" %>
+      </div>
+    </div>
+  </div>
+</div>

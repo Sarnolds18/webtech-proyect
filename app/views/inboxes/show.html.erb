@@ -15,7 +15,12 @@
     </span>
   </p>
 
-  <%= render "applications/privacy_notice" %>
+  <% unless @listing.host == current_user %>
+    <p class="alert alert-secondary small" role="note">
+      <i class="bi bi-eye me-1" aria-hidden="true"></i>
+      You are reading this inbox as a moderator. Only the host answers the applications.
+    </p>
+  <% end %>
 
   <% if @applications.present? %>
     <div class="table-responsive">

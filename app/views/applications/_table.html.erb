@@ -1,0 +1,40 @@
+<%# A table of applications. Columns that would repeat the section they are in can be turned off. %>
+<% show_listing = local_assigns.fetch(:show_listing, true) %>
+<% show_applicant = local_assigns.fetch(:show_applicant, true) %>
+<div class="table-responsive">
+  <table class="table table-hover align-middle text-nowrap mb-0">
+    <thead>
+      <tr>
+        <% if show_listing %><th scope="col">Listing</th><% end %>
+        <% if show_applicant %><th scope="col">Applicant</th><% end %>
+        <th scope="col">Status</th>
+        <th scope="col">Move-in date</th>
+        <th scope="col">Stay</th>
+        <th scope="col">Applied on</th>
+        <th scope="col"><span class="visually-hidden">Details</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% applications.each do |application| %>
+        <tr>
+          <% if show_listing %>
+            <td>
+              <%= link_to application.listing.title, listing_path(application.listing) %>
+              <span class="d-block small text-muted"><%= application.listing.property.neighborhood.name %></span>
+            </td>
+          <% end %>
+          <% if show_applicant %><td><%= application.seeker.name %></td><% end %>
+          <td><%= status_badge(application.status) %></td>
+          <td><%= long_date(application.move_in_date) %></td>
+          <td><%= pluralize(application.stay_months, "month") %></td>
+          <td><%= long_date(application.created_at) %></td>
+          <td class="text-end">
+            <%= link_to application_path(application), class: "btn btn-sm btn-outline-primary" do %>
+              View<span class="visually-hidden"> application to <%= application.listing.title %> from <%= application.seeker.name %></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

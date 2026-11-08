@@ -1,6 +1,8 @@
 <%# One application in the host's inbox. Turbo Streams replace the whole row after each answer, so
-    the buttons always match the new state. The model enforces the rules; this only hides buttons. %>
+    the buttons always match the new state. ApplicationPolicy and the model enforce the rules; this only
+    hides the buttons (e.g. a moderator reads the inbox but cannot answer). %>
 <% listing = application.listing %>
+<% answering = policy(application).answer? %>
 <tr id="<%= dom_id(application) %>">
   <td class="text-nowrap">
     <%= application.seeker.name %>
@@ -12,15 +14,15 @@
   <td><%= status_badge(application.status) %></td>
   <td class="text-end">
     <div class="d-flex flex-wrap justify-content-end gap-2">
-      <% if listing.published? && application.pending? %>
+      <% if answering && listing.published? && application.pending? %>
         <%= button_to "Shortlist", shortlist_application_path(application), method: :patch,
               class: "btn btn-sm btn-outline-primary" %>
       <% end %>
-      <% if listing.published? && application.undecided? %>
+      <% if answering && listing.published? && application.undecided? %>
         <%= button_to "Accept", accept_application_path(application), method: :patch, class: "btn btn-sm btn-success",
               form: { data: { turbo_confirm: "Accept #{application.seeker.name}? Every other application still waiting will be rejected." } } %>
       <% end %>
-      <% if application.undecided? %>
+      <% if answering && application.undecided? %>
         <%= button_to "Reject", reject_application_path(application), method: :patch, class: "btn btn-sm btn-outline-danger",
               form: { data: { turbo_confirm: "Reject the application from #{application.seeker.name}?" } } %>
       <% end %>

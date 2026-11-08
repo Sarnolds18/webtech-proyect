@@ -26,8 +26,9 @@ class InboxesControllerTest < ActionDispatch::IntegrationTest
     act_as users(:seeker)
     get listing_inbox_path(@listing)
 
-    assert_redirected_to listing_path(@listing)
-    assert_equal "Only the host of this listing can open its inbox.", flash[:alert]
+    assert_response :forbidden
+    assert_select "h1", "Access denied"
+    assert_no_match applications(:pending).message, response.body
   end
 
   test "the property page links the host to the inbox of each listing" do
@@ -106,7 +107,7 @@ class InboxesControllerTest < ActionDispatch::IntegrationTest
 
     patch accept_application_path(application), as: :turbo_stream
 
-    assert_redirected_to listing_path(@listing)
+    assert_response :forbidden
     assert application.reload.pending?
   end
 end

@@ -1,49 +1,56 @@
-<% content_for :title, "Applications - Roomies" %>
+<% content_for :title, "My applications - Roomies" %>
 
 <div class="container py-4">
-  <h1 class="fw-bold mb-4">Applications</h1>
+  <h1 class="fw-bold mb-2">My applications</h1>
+  <p class="text-muted mb-4">
+    <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>
+    Only you and the host of each listing can see these applications.
+  </p>
 
-  <%= render "applications/privacy_notice" %>
+  <section class="mb-5" aria-labelledby="sent-heading">
+    <h2 id="sent-heading" class="h4 fw-bold mb-3">
+      Applications I sent <span class="badge text-bg-secondary align-middle fs-6"><%= @sent.size %></span>
+    </h2>
 
-  <h2 class="h5 text-muted mb-3"><%= pluralize(@applications.length, "application") %></h2>
+    <% if @sent.present? %>
+      <%= render "applications/table", applications: @sent, show_applicant: false %>
+    <% else %>
+      <p class="text-muted mb-0">
+        You have not applied to any room yet. <%= link_to "Search rooms", listings_path %>.
+      </p>
+    <% end %>
+  </section>
 
-  <% if @applications.present? %>
-    <div class="table-responsive">
-      <table class="table table-hover align-middle text-nowrap mb-0">
-        <thead>
-          <tr>
-            <th scope="col">Listing</th>
-            <th scope="col">Applicant</th>
-            <th scope="col">Status</th>
-            <th scope="col">Move-in date</th>
-            <th scope="col">Stay</th>
-            <th scope="col">Applied on</th>
-            <th scope="col"><span class="visually-hidden">Details</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @applications.each do |application| %>
-            <tr>
-              <td>
-                <%= link_to application.listing.title, listing_path(application.listing) %>
-                <span class="d-block small text-muted"><%= application.listing.property.neighborhood.name %></span>
-              </td>
-              <td><%= application.seeker.name %></td>
-              <td><%= status_badge(application.status) %></td>
-              <td><%= long_date(application.move_in_date) %></td>
-              <td><%= pluralize(application.stay_months, "month") %></td>
-              <td><%= long_date(application.created_at) %></td>
-              <td class="text-end">
-                <%= link_to application_path(application), class: "btn btn-sm btn-outline-primary" do %>
-                  View<span class="visually-hidden"> application from <%= application.seeker.name %></span>
-                <% end %>
-              </td>
-            </tr>
+  <section class="mb-5" aria-labelledby="received-heading">
+    <h2 id="received-heading" class="h4 fw-bold mb-3">
+      Applications I received
+      <span class="badge text-bg-secondary align-middle fs-6"><%= @received.values.sum(&:size) %></span>
+    </h2>
+
+    <% if @received.present? %>
+      <% @received.each do |listing, applications| %>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 mb-2">
+          <h3 class="h5 fw-semibold mb-0">
+            <%= link_to listing.title, listing_path(listing) %> <%= status_badge(listing.status) %>
+          </h3>
+          <%= link_to listing_inbox_path(listing), class: "btn btn-sm btn-outline-primary" do %>
+            <i class="bi bi-inbox me-1" aria-hidden="true"></i>Open the inbox
           <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
-    <p class="mb-0">Nobody has applied to a listing yet.</p>
+        </div>
+        <%= render "applications/table", applications: applications, show_listing: false %>
+      <% end %>
+    <% else %>
+      <p class="text-muted mb-0">Your listings have not received applications yet.</p>
+    <% end %>
+  </section>
+
+  <% if @others.present? %>
+    <section aria-labelledby="others-heading">
+      <h2 id="others-heading" class="h4 fw-bold mb-1">
+        Every other application <span class="badge text-bg-warning align-middle fs-6"><%= @others.size %></span>
+      </h2>
+      <p class="small text-muted mb-3">You can read these because you are a moderator. Only each host answers them.</p>
+      <%= render "applications/table", applications: @others %>
+    </section>
   <% end %>
 </div>

@@ -121,7 +121,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
 
     patch withdraw_application_path(application)
 
-    assert_redirected_to listing_path(@listing)
+    assert_response :forbidden
     assert application.reload.shortlisted?
   end
 end

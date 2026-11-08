@@ -1,5 +1,5 @@
 <% content_for :title, "Application to #{@application.listing.title} - Roomies" %>
-<% hosting = @application.listing.host == current_user %>
+<% application_policy = policy(@application) %>
 
 <div class="container py-4">
   <h1 class="fw-bold mb-2">Application to <%= @application.listing.title %></h1>
@@ -7,8 +7,6 @@
     <%= status_badge(@application.status) %>
     <span>Sent by <%= @application.seeker.name %> on <%= long_date(@application.created_at) %></span>
   </p>
-
-  <%= render "applications/privacy_notice" %>
 
   <div class="row g-4 g-lg-5">
     <div class="col-lg-8">
@@ -35,7 +33,7 @@
                   <tr id="<%= dom_id(visit) %>">
                     <td><%= long_date(visit.scheduled_at) %> at <%= visit.scheduled_at.strftime("%H:%M") %></td>
                     <td><%= status_badge(visit.status) %></td>
-                    <td><%= render "visits/actions", visit: visit, hosting: hosting %></td>
+                    <td><%= render "visits/actions", visit: visit %></td>
                   </tr>
                 <% end %>
               </tbody>
@@ -46,7 +44,7 @@
         <% end %>
 
         <%# Also after a failed proposal, so the errors are shown next to the field. %>
-        <% if hosting && (@application.shortlisted? || @visit.errors.any?) %>
+        <% if policy(Visit.new(application: @application)).create? && (@application.shortlisted? || @visit.errors.any?) %>
           <%= render "visits/form", application: @application, visit: @visit %>
         <% end %>
       </section>
@@ -60,6 +58,15 @@
           <dl class="row mb-0">
             <dt class="col-6 fw-normal text-muted">Applicant</dt>
             <dd class="col-6 text-end"><%= @application.seeker.name %></dd>
+
+            <%# The applicant's contact details are for the host only, to arrange the visit. %>
+            <% if application_policy.answer? %>
+              <dt class="col-6 fw-normal text-muted">Email</dt>
+              <dd class="col-6 text-end text-break"><%= mail_to @application.seeker.email_address %></dd>
+
+              <dt class="col-6 fw-normal text-muted">Phone</dt>
+              <dd class="col-6 text-end"><%= @application.seeker.phone.presence || "Not given" %></dd>
+            <% end %>
 
             <dt class="col-6 fw-normal text-muted">Move-in date</dt>
             <dd class="col-6 text-end"><%= long_date(@application.move_in_date) %></dd>

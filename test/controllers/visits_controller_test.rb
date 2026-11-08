@@ -89,14 +89,16 @@ class VisitsControllerTest < ActionDispatch::IntegrationTest
   test "only the seeker confirms and only the host manages visits" do
     act_as users(:host)
     patch confirm_visit_path(@visit)
+    assert_response :forbidden
     assert @visit.reload.proposed?
 
     act_as users(:seeker)
-    patch cancel_visit_path(@visit)
+    patch complete_visit_path(@visit)
+    assert_response :forbidden
     assert @visit.reload.proposed?
     assert_no_difference -> { Visit.count } do
       post application_visits_path(@application), params: { visit: { scheduled_at: datetime_param(5.days.from_now) } }
     end
-    assert_equal "Only the host of the listing can manage its visits.", flash[:alert]
+    assert_response :forbidden
   end
 end

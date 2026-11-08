@@ -1,0 +1,22 @@
+<%# Any member reports a listing that is not theirs, once. Moderators review it in /reports. %>
+<% if current_user && !listing.reports.exists?(reporter: current_user) && policy(Report.new(listing:, reporter: current_user)).create? %>
+  <details class="mt-4">
+    <summary class="small text-muted"><i class="bi bi-flag me-1" aria-hidden="true"></i>Report this listing</summary>
+    <%= form_with model: Report.new, url: listing_reports_path(listing), class: "card card-body shadow-sm mt-2" do |form| %>
+      <div class="mb-3">
+        <%= form.label :reason, "What is wrong?", class: "form-label" %>
+        <%= form.select :reason, Report.reasons.keys.map { |reason| [ reason.humanize, reason ] },
+              { prompt: "Choose a reason" }, class: "form-select", required: true %>
+      </div>
+      <div class="mb-3">
+        <%= form.label :details, "Details (optional)", class: "form-label" %>
+        <%= form.text_area :details, class: "form-control", rows: 3 %>
+      </div>
+      <%= form.submit "Send report", class: "btn btn-outline-danger btn-sm" %>
+    <% end %>
+  </details>
+<% elsif current_user && listing.reports.exists?(reporter: current_user) %>
+  <p class="small text-muted mt-4 mb-0">
+    <i class="bi bi-flag-fill me-1" aria-hidden="true"></i>You reported this listing. A moderator will review it.
+  </p>
+<% end %>

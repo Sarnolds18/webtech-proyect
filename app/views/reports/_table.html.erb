@@ -1,0 +1,33 @@
+<div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">Listing</th>
+        <th scope="col">Reason</th>
+        <th scope="col">Reported by</th>
+        <th scope="col">Status</th>
+        <th scope="col">Reported on</th>
+        <th scope="col"><span class="visually-hidden">Details</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reports.each do |report| %>
+        <tr>
+          <td>
+            <%= link_to report.listing.title, listing_path(report.listing) %>
+            <span class="d-block small text-muted"><%= report.listing.property.neighborhood.name %></span>
+          </td>
+          <td><%= report.reason.humanize %></td>
+          <td class="text-nowrap"><%= report.reporter.name %></td>
+          <td><%= status_badge(report.status) %></td>
+          <td class="text-nowrap"><%= long_date(report.created_at) %></td>
+          <td class="text-end">
+            <%= link_to report_path(report), class: "btn btn-sm btn-outline-primary" do %>
+              Review<span class="visually-hidden"> the report on <%= report.listing.title %></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

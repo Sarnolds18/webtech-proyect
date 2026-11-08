@@ -46,7 +46,7 @@ class ReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { Review.count } do
       post property_reviews_path(@property), params: { review: { visit_id: @visit.id, rating: 5, comment: "Mine!" } }
     end
-    assert_response :unprocessable_entity
+    assert_response :forbidden
   end
 
   test "a visit that is not completed cannot be reviewed" do
@@ -55,7 +55,7 @@ class ReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { Review.count } do
       post property_reviews_path(@property), params: { review: { visit_id: visits(:proposed).id, rating: 5, comment: "Hi" } }
     end
-    assert_response :unprocessable_entity
+    assert_response :forbidden
   end
 
   test "a visit to another property is not reviewed from this page" do

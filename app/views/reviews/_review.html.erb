@@ -4,7 +4,16 @@
       <%= rating_stars(review.rating) %>
       <strong class="ms-2"><%= review.author.name %></strong>
     </span>
-    <span class="small text-muted"><%= long_date(review.created_at) %></span>
+    <span class="d-flex align-items-center gap-2">
+      <span class="small text-muted"><%= long_date(review.created_at) %></span>
+      <% if policy(review).destroy? %>
+        <%= button_to review_path(review), method: :delete, class: "btn btn-sm btn-outline-danger",
+              aria: { label: "Delete the review by #{review.author.name}" },
+              form: { data: { turbo_confirm: "Delete this review? This cannot be undone." } } do %>
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        <% end %>
+      <% end %>
+    </span>
   </p>
 
   <%= simple_format review.comment, class: "mb-0" %>

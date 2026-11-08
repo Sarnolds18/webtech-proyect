@@ -13,8 +13,45 @@ class Report < ApplicationRecord
   # Reports a moderator still has to review.
   scope :unresolved, -> { where(status: :open) }
   scope :recent_first, -> { order(created_at: :desc) }
+  scope :resolved, -> { where.not(status: :open) }
+
+  # Only open reports wait for a decision.
+  def resolvable?
+    open?
+  end
+
+  # The moderator decides the report is not a problem. The decision and its log entry are saved
+  # together or not at all.
+  def dismiss!(moderator:, notes: nil)
+    transaction do
+      ensure_resolvable!
+      dismissed!
+      ModerationAction.create!(moderator:, report: self, target_listing: listing, target_user: listing.host,
+                               action_type: :dismiss_report, notes: notes.presence)
+    end
+  end
+
+  # The moderator agrees: the listing is withdrawn (rejecting the applications still waiting) and every
+  # open report on it is closed, all or nothing.
+  def take_action!(moderator:, notes: nil)
+    transaction do
+      ensure_resolvable!
+      listing.withdraw! if listing.withdrawable?
+      listing.reports.unresolved.update_all(status: "action_taken", updated_at: Time.current)
+      reload
+      ModerationAction.create!(moderator:, report: self, target_listing: listing, target_user: listing.host,
+                               action_type: :withdraw_listing, notes: notes.presence)
+    end
+  end
 
   private
+
+  def ensure_resolvable!
+    return if resolvable?
+
+    errors.add(:status, "is already #{status.humanize(capitalize: false)}")
+    raise ActiveRecord::RecordInvalid, self
+  end
 
   def reporter_is_not_the_host
     return if listing.nil? || reporter.nil?

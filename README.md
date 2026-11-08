@@ -35,8 +35,9 @@ webtech-proyect/
 └── README.md
 ```
 
-Pundit policies (`app/policies/`), moderation controllers and the versioned API
-(`app/controllers/api/v1/`) are being integrated separately by the other team members.
+Authorization lives in `app/policies/` (one Pundit policy per model, all inheriting from
+`BasePolicy`) and `app/controllers/concerns/authorization.rb`. The versioned API
+(`app/controllers/api/v1/`) is being integrated separately.
 
 ## Getting Started
 
@@ -74,7 +75,8 @@ bin/rails test
 ```
 
 The suite covers model validations and database constraints, CRUD and Hotwire flows, sign up,
-sessions, password reset, profile ownership and notification emails. The test scenario is built
+sessions, password reset, profile ownership, notification emails, every Pundit policy and the
+privacy of applications by URL. The test scenario is built
 with `create!` in `test/test_helper.rb`, rather than YAML fixtures.
 
 Additional local checks:
@@ -135,12 +137,13 @@ Host and seeker describe how a member uses the app; they are not additional valu
 |---|---|
 | `/` | Home (the landing page) |
 | `/listings` | Published listings, with filters by neighborhood, maximum rent and availability date |
-| `/listings/:id` | Listing details; a draft is restricted to its host (and a moderator once Pundit is integrated) |
+| `/listings/:id` | Listing details; a draft is restricted to its host and the moderators |
 | `/properties`, `/properties/:id` | Properties, their listings and reviews |
 | `/neighborhoods`, `/neighborhoods/:id` | Neighborhoods and their listings |
-| `/applications`, `/applications/:id` | Applications and their visits; scoped privacy is part of the Pundit integration |
+| `/applications`, `/applications/:id` | "My applications": the ones you sent and the ones your listings received (moderators see all) |
 | `/listings/:listing_id/inbox` | Host inbox, with Turbo Stream answers |
-| `/amenities` | Amenity catalog |
+| `/amenities` | Amenity catalog (moderators) |
+| `/reports`, `/reports/:id` | Reported listings, dismissed or acted on by moderators |
 | `/session/new` | Sign in; sign out is available in the user menu |
 | `/sign_up` | Create an active member account |
 | `/passwords/new` | Request a password reset email |
@@ -153,16 +156,20 @@ Passwords need at least 8 characters; changing one in the profile requires the c
 A bio may contain up to 500 characters. Phone numbers are optional and accept a leading `+`,
 digits, spaces and hyphens (7–20 characters).
 
-The other team members' integrations add `/reports` (moderation), `/api/v1/listings`,
+The API integration adds `/api/v1/listings`,
 `/api/v1/listings/:id`, `/api/v1/neighborhoods` and `/api/v1/amenities` (public JSON data).
 These endpoints are not present in this checkout yet.
 
 ## Roles and permissions
 
-The table below is the Assignment 4 authorization contract. Authentication is implemented;
-Pundit policies, scopes and moderation are a separate integration still pending in this checkout.
-In particular, the application index and show pages still use the earlier public queries until
-that integration lands. The privacy checks below must be verified again with the complete code.
+Every rule below is a Pundit policy in `app/policies/`, and every controller action calls
+`authorize` (checked by `verify_authorized`), so hiding a button is only a courtesy: typing a URL or
+sending a request by hand is blocked too. Lists of private records (the applications page, the host
+inbox, the listings of a property) come from policy scopes, so the query itself returns only what the
+user may see. A visitor who tries a protected action is sent to sign in; a signed-in member gets an
+**Access denied** page (HTTP 403) that explains why, or the same message inside the Turbo Frame when
+the request came from one. Moderators' withdrawals, report decisions and review deletions are
+recorded as moderation actions.
 
 | Action | Visitor | Member | Moderator |
 |---|---|---|---|
@@ -186,28 +193,28 @@ under the same account. Ownership determines most permissions.
 ## How to verify the permissions
 
 `bin/rails db:seed` prints actual URLs for the records below; ids change when the seed is rerun.
-Every account uses `password123`. The cross-account denials and moderation steps require the
-Pundit integration described above.
+Every account uses `password123`.
 
 1. As a visitor, open the home page, listings, properties and reviews. Creating a property or
    opening `/profile` must redirect to sign in. Create an account at `/sign_up`, edit its profile,
    sign out and sign back in. Supplying a role during registration must not create a moderator.
 2. Sign in as Valentina. Her draft is **Valentina's draft room in Providencia**, linked from her
    property page. Save its URL, open it as Sofía and expect access denied. Repeat with Matías's
-   draft in Ñuñoa. Once policies are integrated, Camila must be able to view either draft.
+   draft in Ñuñoa. Camila, as a moderator, can view either draft.
 3. Sign in as Matías and open the printed inbox URL for **Large room with private bathroom**.
    Shortlist a pending application, propose a visit, then accept an applicant. The listing must
    become reserved and the other pending/shortlisted applications must become rejected together.
    Check that the Turbo Stream updates the rows, counter and listing status.
 4. Sign in as Sofía. Check her sent applications and save one of their URLs. Sign in as Isidora
    (a member without properties): the URL of Sofía's application must be denied and its message
-   must not appear in Isidora's list once policy scopes are integrated.
+   must not appear in Isidora's list.
 5. Sign in as Isidora to confirm her proposed visit, or as Francisca to write a review on
    **Bright apartment near Metro Pedro de Valdivia**. Francisca already has a completed visit
    without a review; the printed property URL leads to the review form.
 6. Sign in as Camila to resolve an open report, withdraw a reported listing, delete a review and
-   manage catalogs. She must not acquire permission to accept another host's applicants simply
-   by being a moderator. Check the audit records after moderation actions.
+   manage catalogs (**Reports** in the navbar shows the open ones). She can read any inbox, but
+   accepting another host's applicant is denied. Each decision appears in the report's
+   moderation log.
 7. Try signing in as Martín: his suspended account must be refused. Request a password reset for
    Sofía, open the email, change her password and check that previous sessions stop working.
 
@@ -270,8 +277,13 @@ The static landing page in [`landing/`](./landing) is kept as history; the app's
 - Notification emails through Active Job, HTML/text templates, development file delivery and previews.
 - Seeds with members and moderators, separate hosts' drafts, competing applicants, a completed
   visit without a review, open reports and printed verification URLs.
-- Pundit policies/scopes, moderation, the public API and search with `fetch` are owned by the
-  other team members and still need integration and final verification in this checkout.
+- Pundit authorization: a policy for every model (`BasePolicy` is the shared base, since
+  `ApplicationPolicy` is the policy of the `Application` model), policy scopes for the applications
+  page and the host inbox, `authorize` in every controller action and an explanatory Access denied
+  page.
+- Moderation: members report listings; moderators dismiss reports or withdraw the listing, delete
+  any review, and every decision is logged as a moderation action.
+- The public API and search with `fetch` are integrated separately.
 
 ## After Pulling Changes
 

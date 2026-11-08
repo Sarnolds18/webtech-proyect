@@ -19,12 +19,25 @@
           <li class="nav-item">
             <%= nav_link_to "Properties", properties_path %>
           </li>
-          <li class="nav-item">
-            <%= nav_link_to "Applications", applications_path %>
-          </li>
-          <% if current_user&.moderator? %>
+          <% if current_user %>
+            <li class="nav-item">
+              <%= nav_link_to "My applications", applications_path %>
+            </li>
+          <% end %>
+          <% if policy(Amenity).create? %>
             <li class="nav-item">
               <%= nav_link_to "Amenities", amenities_path %>
+            </li>
+          <% end %>
+          <% if policy(Report).index? %>
+            <li class="nav-item">
+              <%= link_to reports_path, class: class_names("nav-link", active: request.path.start_with?(reports_path)),
+                    aria: { current: ("page" if request.path.start_with?(reports_path)) } do %>
+                Reports
+                <% if (open_reports = Report.unresolved.count).positive? %>
+                  <span class="badge rounded-pill text-bg-danger"><%= open_reports %><span class="visually-hidden"> open</span></span>
+                <% end %>
+              <% end %>
             </li>
           <% end %>
           <li class="nav-item">

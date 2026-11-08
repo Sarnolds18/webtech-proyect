@@ -1,20 +1,36 @@
-# A seeker reviews a property after a completed visit. The model checks that the visit is completed,
-# that the author is its seeker and not the host, and that the visit has no review yet.
+# A seeker reviews a property after their own completed visit (ReviewPolicy, and the model explains any
+# problem with the form). The author or a moderator deletes a review; a moderator's deletion is logged.
 class ReviewsController < ApplicationController
   before_action :require_user
-  before_action :set_property
+  before_action :set_property, only: :create
+  after_action :verify_authorized
 
   def create
-    @review = Review.new(review_params.merge(author: current_user))
+    @review = authorize Review.new(review_params.merge(author: current_user))
 
     if @review.save
       redirect_to @review.property, notice: "Thank you! Your review was published."
     else
-      @listings = @property.listings.with_attached_photos.soonest_available
-      @listings = @listings.published unless @property.host == current_user
+      @listings = policy_scope(@property.listings).with_attached_photos.soonest_available
       @reviews = @property.reviews.includes(:author, reply: :author).recent_first
       render "properties/show", status: :unprocessable_entity
     end
+  end
+
+  # The review row is deleted, so a moderator's log entry keeps what it said in its notes.
+  def destroy
+    review = authorize Review.includes(:author, :property).find(params[:id])
+
+    Review.transaction do
+      review.destroy!
+      unless review.author == current_user
+        ModerationAction.create!(moderator: current_user, action_type: :remove_review, target_user: review.author,
+                                 notes: "Removed a #{review.rating}-star review of #{review.property.title}: " \
+                                        "#{review.comment.truncate(100)}")
+      end
+    end
+
+    redirect_back_or_to review.property, notice: "The review was deleted."
   end
 
   private

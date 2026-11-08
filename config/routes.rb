@@ -36,6 +36,18 @@ Rails.application.routes.draw do
   end
   resources :neighborhoods
   resources :amenities, except: :show
+
+  # Members report listings; moderators resolve the reports. Reviews are deleted by their author or a moderator.
+  resources :listings, only: [] do
+    resources :reports, only: :create
+  end
+  resources :reports, only: %i[index show] do
+    member do
+      patch :dismiss
+      patch :take_action
+    end
+  end
+  resources :reviews, only: :destroy
   resources :applications, only: %i[index show] do
     member do
       patch :withdraw

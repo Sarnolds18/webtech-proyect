@@ -4,7 +4,7 @@ module ApplicationHelper
     "draft" => "secondary", "published" => "success", "reserved" => "warning", "rented" => "info",
     "pending" => "secondary", "shortlisted" => "primary", "accepted" => "success", "rejected" => "danger",
     "proposed" => "secondary", "confirmed" => "primary", "completed" => "success", "cancelled" => "danger",
-    "withdrawn" => "dark"
+    "withdrawn" => "dark", "open" => "warning", "dismissed" => "secondary", "action_taken" => "danger"
   }.freeze
 
   # Navbar link that marks itself as the current section, on the index page and on every page below it.

@@ -1,0 +1,26 @@
+<% content_for :title, "Reports - Roomies" %>
+
+<div class="container py-4">
+  <h1 class="fw-bold mb-2">Reports</h1>
+  <p class="text-muted mb-4">Listings that members flagged. Dismiss a report or withdraw the listing.</p>
+
+  <section class="mb-5" aria-labelledby="open-heading">
+    <h2 id="open-heading" class="h4 fw-bold mb-3">
+      Waiting for a decision <span class="badge text-bg-warning align-middle fs-6"><%= @open_reports.size %></span>
+    </h2>
+    <% if @open_reports.present? %>
+      <%= render "reports/table", reports: @open_reports %>
+    <% else %>
+      <p class="text-muted mb-0">There are no open reports. Nothing to review right now.</p>
+    <% end %>
+  </section>
+
+  <section aria-labelledby="resolved-heading">
+    <h2 id="resolved-heading" class="h4 fw-bold mb-3">Recently resolved</h2>
+    <% if @resolved_reports.present? %>
+      <%= render "reports/table", reports: @resolved_reports %>
+    <% else %>
+      <p class="text-muted mb-0">No report has been resolved yet.</p>
+    <% end %>
+  </section>
+</div>

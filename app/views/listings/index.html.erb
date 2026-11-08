@@ -1,27 +1,70 @@
 <% content_for :title, "Rooms available - Roomies" %>
 <% filtered = params.values_at(:neighborhood_id, :max_rent, :available_from).any?(&:present?) || Array.wrap(params[:amenity_ids]).grep(String).any?(&:present?) %>
 
-<div class="container py-4">
+<%# The first page is rendered here, so the search works without JavaScript. With JavaScript,
+    listing_search_controller.js asks the public JSON API (/api/v1/listings) with fetch on every
+    change of the filters and redraws the cards without reloading the page. %>
+<div class="container py-4"
+     data-controller="listing-search"
+     data-listing-search-url-value="<%= api_v1_listings_path %>">
   <h1 class="fw-bold mb-4">Rooms available</h1>
 
   <section class="mb-5" aria-labelledby="filters-heading">
     <h2 id="filters-heading" class="visually-hidden">Filter rooms</h2>
-    <%= render "shared/search_form", neighborhoods: @neighborhoods, amenities: @amenities %>
+    <%= render "shared/search_form", neighborhoods: @neighborhoods, amenities: @amenities,
+               form_data: { listing_search_target: "form",
+                            action: "input->listing-search#search change->listing-search#search submit->listing-search#submit" } %>
   </section>
 
-  <section aria-labelledby="results-heading">
-    <h2 id="results-heading" class="h5 text-muted mb-3"><%= pluralize(@listings.length, "room") %> found</h2>
+  <section aria-labelledby="results-heading" data-listing-search-target="section">
+    <h2 id="results-heading" class="h5 text-muted mb-3" data-listing-search-target="count" aria-live="polite">
+      <%= pluralize(@listings.length, "room") %> found
+    </h2>
 
-    <% if @listings.present? %>
-      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <%= render partial: "listings/listing_card", collection: @listings, as: :listing %>
+    <div class="alert alert-danger d-none" role="alert" data-listing-search-target="error"></div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" data-listing-search-target="results">
+      <%= render partial: "listings/listing_card", collection: @listings, as: :listing %>
+    </div>
+
+    <div class="<%= class_names("mb-0", "d-none": @listings.present?) %>" data-listing-search-target="empty">
+      <% if filtered || @listings.present? %>
+        <p class="mb-0">No rooms match your search. <%= link_to "Clear the filters", listings_path %> to see every room.</p>
+      <% else %>
+        <p class="mb-0">There are no rooms published right now. Check back soon.</p>
+      <% end %>
+    </div>
+
+    <div class="text-center">
+      <button type="button" class="btn btn-outline-primary mt-4 d-none"
+              data-listing-search-target="more" data-action="listing-search#loadMore">Load more rooms</button>
+    </div>
+
+    <%# Same markup as listings/_listing_card, filled in by listing_search_controller.js. Keep both in sync. %>
+    <template data-listing-search-target="template">
+      <div class="col">
+        <article class="card h-100 shadow-sm overflow-hidden listing-card">
+          <img class="card-img-top" data-field="photo" alt="" loading="lazy">
+          <div class="card-body d-flex flex-column p-4">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+              <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill px-3 py-2 fw-semibold" data-field="neighborhood"></span>
+              <span class="fw-bold text-success listing-card-price">
+                <span data-field="rent"></span> <small class="text-muted fw-normal">/ month</small>
+              </span>
+            </div>
+
+            <h3 class="card-title h5 fw-bold mb-1">
+              <a class="stretched-link text-decoration-none text-dark" data-field="title"></a>
+            </h3>
+            <p class="card-text text-secondary small flex-grow-1" data-field="property"></p>
+
+            <p class="pt-3 border-top mt-auto mb-0 small text-muted">
+              <i class="bi bi-calendar-event me-1 text-primary" aria-hidden="true"></i>
+              Available from <strong data-field="available"></strong>
+            </p>
+          </div>
+        </article>
       </div>
-    <% elsif filtered %>
-      <p class="mb-0">
-        No rooms match your search. <%= link_to "Clear the filters", listings_path %> to see every room.
-      </p>
-    <% else %>
-      <p class="mb-0">There are no rooms published right now. Check back soon.</p>
-    <% end %>
+    </template>
   </section>
 </div>

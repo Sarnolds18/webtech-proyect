@@ -1,5 +1,5 @@
 <%# Search fields shared by the home page and the listings index. They keep the values of the current search. %>
-<%= form_with url: listings_path, method: :get, class: "row g-3 align-items-end" do |form| %>
+<%= form_with url: listings_path, method: :get, class: "row g-3 align-items-end", data: local_assigns[:form_data] do |form| %>
   <div class="col-md-4">
     <%= form.label :neighborhood_id, "Neighborhood", class: "form-label" %>
     <%= form.select :neighborhood_id,
@@ -9,7 +9,7 @@
 
   <div class="col-md-4">
     <%= form.label :max_rent, "Maximum rent", class: "form-label" %>
-    <%= form.number_field :max_rent, value: params[:max_rent], min: 0,
+    <%= form.number_field :max_rent, value: params[:max_rent], min: 1,
           placeholder: "e.g. 350000", class: "form-control" %>
   </div>
 

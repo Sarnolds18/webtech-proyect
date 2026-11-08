@@ -36,4 +36,34 @@ class ListingSearchTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match listings(:pricey).title, response.body
   end
+
+  test "the listings page is wired to search through the API with fetch" do
+    get listings_path
+
+    assert_select "[data-controller='listing-search'][data-listing-search-url-value='#{api_v1_listings_path}']" do
+      assert_select "form[data-listing-search-target='form'][action='#{listings_path}'][method='get']"
+      assert_select "form[data-action*='input->listing-search#search'][data-action*='submit->listing-search#submit']"
+      assert_select "[data-listing-search-target='results'] .listing-card", 2
+      assert_select "[data-listing-search-target='count'][aria-live='polite']", text: /2 rooms found/
+      assert_select "[data-listing-search-target='empty'].d-none"
+      assert_select "button[data-listing-search-target='more'][data-action='listing-search#loadMore']"
+      assert_select "template[data-listing-search-target='template']"
+    end
+  end
+
+  test "the card template has a slot for every field the script fills in" do
+    get listings_path
+
+    template = Nokogiri::HTML5.fragment(css_select("template[data-listing-search-target='template']").first.inner_html)
+    %w[photo neighborhood rent title property available].each do |field|
+      assert template.at_css("[data-field='#{field}']"), "missing data-field=#{field}"
+    end
+  end
+
+  test "the home search stays a plain GET to the listings page" do
+    get root_path
+
+    assert_select "form[action='#{listings_path}'][method='get']"
+    assert_select "form[data-listing-search-target]", count: 0
+  end
 end

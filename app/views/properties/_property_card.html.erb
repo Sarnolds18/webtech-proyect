@@ -17,7 +17,7 @@
       </p>
 
       <p class="pt-3 border-top mt-auto mb-0 small text-muted d-flex justify-content-between gap-2">
-        <span><i class="bi bi-door-open me-1 text-primary" aria-hidden="true"></i><%= pluralize(property.listings.size, "listing") %></span>
+        <span><i class="bi bi-door-open me-1 text-primary" aria-hidden="true"></i><%= pluralize(property.listings.count(&:published?), "listing") %></span>
         <span>Hosted by <strong><%= property.host.name %></strong></span>
       </p>
     </div>

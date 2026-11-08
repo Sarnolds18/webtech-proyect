@@ -64,8 +64,9 @@ class PropertiesControllerTest < ActionDispatch::IntegrationTest
   test "only the host can edit a property" do
     act_as users(:seeker)
     get edit_property_path(@property)
-    assert_redirected_to property_path(@property)
-    assert_equal "Only the host of this property can change it.", flash[:alert]
+    assert_response :forbidden
+    assert_select "h1", "Access denied"
+    assert_select "p", /Only the host of this property can change it/
 
     patch property_path(@property), params: { property: { title: "Mine now" } }
     assert_not_equal "Mine now", @property.reload.title

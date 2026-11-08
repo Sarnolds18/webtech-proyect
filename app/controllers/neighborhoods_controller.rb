@@ -1,12 +1,13 @@
 # The neighborhood catalog: everyone browses it, only moderators manage it.
 class NeighborhoodsController < ApplicationController
-  before_action :require_moderator, except: %i[index show]
+  before_action :require_user, except: %i[index show]
   before_action :set_neighborhood, only: %i[show edit update destroy]
+  after_action :verify_authorized, except: %i[index show]
 
   def index
     @neighborhoods = Neighborhood.active.alphabetical
     # Moderators also see the inactive ones, to edit or reactivate them.
-    @inactive_neighborhoods = current_user&.moderator? ? Neighborhood.where(active: false).alphabetical : Neighborhood.none
+    @inactive_neighborhoods = policy(Neighborhood).update? ? Neighborhood.where(active: false).alphabetical : Neighborhood.none
     # Published listings per neighborhood, counted in one grouped query instead of one count per row.
     @published_counts = Listing.published.joins(:property).group("properties.neighborhood_id").count
   end
@@ -17,11 +18,11 @@ class NeighborhoodsController < ApplicationController
   end
 
   def new
-    @neighborhood = Neighborhood.new(city: "Santiago")
+    @neighborhood = authorize Neighborhood.new(city: "Santiago")
   end
 
   def create
-    @neighborhood = Neighborhood.new(neighborhood_params)
+    @neighborhood = authorize Neighborhood.new(neighborhood_params)
 
     if @neighborhood.save
       redirect_to @neighborhood, notice: "#{@neighborhood.name} was added to the catalog."
@@ -31,9 +32,11 @@ class NeighborhoodsController < ApplicationController
   end
 
   def edit
+    authorize @neighborhood
   end
 
   def update
+    authorize @neighborhood
     if @neighborhood.update(neighborhood_params)
       redirect_to @neighborhood, notice: "#{@neighborhood.name} was updated."
     else
@@ -43,6 +46,7 @@ class NeighborhoodsController < ApplicationController
 
   # A neighborhood with properties cannot be deleted (restrict_with_error); it is deactivated instead.
   def destroy
+    authorize @neighborhood
     if @neighborhood.destroy
       redirect_to neighborhoods_path, notice: "#{@neighborhood.name} was deleted from the catalog."
     else

@@ -15,12 +15,11 @@ class NeighborhoodsControllerTest < ActionDispatch::IntegrationTest
 
   test "members and visitors cannot manage the catalog, even by URL" do
     get new_neighborhood_path
-    assert_redirected_to root_path
-    assert_equal "Only moderators can do that.", flash[:alert]
+    assert_redirected_to new_session_path
 
     act_as users(:seeker)
     get new_neighborhood_path
-    assert_redirected_to root_path
+    assert_response :forbidden
 
     assert_no_difference -> { Neighborhood.count } do
       post neighborhoods_path, params: { neighborhood: { name: "Vitacura", city: "Santiago" } }

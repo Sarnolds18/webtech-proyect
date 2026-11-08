@@ -83,17 +83,22 @@ class ListingsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { Listing.count } do
       post property_listings_path(@property), params: { listing: listing_params }
     end
-    assert_redirected_to property_path(@property)
+    assert_response :forbidden
   end
 
-  test "a draft redirects everyone but its host" do
+  test "a draft is shown only to its host and the moderators" do
     get listing_path(@draft)
-    assert_redirected_to listings_path
-    assert_equal "That listing is not available.", flash[:alert]
+    assert_redirected_to new_session_path
 
     act_as users(:seeker)
     get listing_path(@draft)
-    assert_redirected_to listings_path
+    assert_response :forbidden
+    assert_select "p", /This listing is a draft/
+    assert_no_match @draft.title, response.body
+
+    act_as users(:moderator)
+    get listing_path(@draft)
+    assert_response :success
 
     act_as users(:host)
     get listing_path(@draft)
@@ -174,7 +179,7 @@ class ListingsControllerTest < ActionDispatch::IntegrationTest
     act_as users(:seeker)
     patch withdraw_listing_path(listings(:cheap))
     assert listings(:cheap).reload.published?
-    assert_redirected_to listing_path(listings(:cheap))
+    assert_response :forbidden
 
     act_as users(:moderator)
     patch publish_listing_path(@draft)
@@ -186,9 +191,12 @@ class ListingsControllerTest < ActionDispatch::IntegrationTest
     get listing_path(listings(:cheap))
     assert_select "#status-actions-heading", /Moderation/
     assert_select "button", text: "Withdraw"
-    assert_select "a", text: "Edit listing", count: 0
+    assert_select "a", text: "Edit listing"
+    assert_select "button", text: "Publish", count: 0
 
-    patch withdraw_listing_path(listings(:cheap))
+    assert_difference -> { ModerationAction.withdraw_listing.count } do
+      patch withdraw_listing_path(listings(:cheap))
+    end
     assert listings(:cheap).reload.withdrawn?
   end
 

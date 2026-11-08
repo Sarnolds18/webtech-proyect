@@ -3,7 +3,7 @@
 <div class="container py-4">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <h1 class="fw-bold mb-0">Amenities</h1>
-    <% if current_user&.moderator? %>
+    <% if policy(Amenity).create? %>
       <%= link_to new_amenity_path, class: "btn btn-primary" do %>
         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>New amenity
       <% end %>
@@ -21,7 +21,7 @@
             <th scope="col">Icon class</th>
             <th scope="col">State</th>
             <th scope="col" class="text-end">Properties</th>
-            <% if current_user&.moderator? %>
+            <% if policy(Amenity).create? %>
               <th scope="col"><span class="visually-hidden">Actions</span></th>
             <% end %>
           </tr>
@@ -43,7 +43,7 @@
                 </span>
               </td>
               <td class="text-end"><%= properties %></td>
-              <% if current_user&.moderator? %>
+              <% if policy(Amenity).create? %>
                 <td class="text-end text-nowrap">
                   <%= link_to "Edit", edit_amenity_path(amenity), class: "btn btn-sm btn-outline-primary",
                         aria: { label: "Edit #{amenity.name}" } %>

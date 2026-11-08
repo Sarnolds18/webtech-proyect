@@ -16,12 +16,12 @@ class AmenitiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav a", text: "Amenities"
   end
 
-  test "a member who opens the form by URL is sent back" do
+  test "a member who opens the form by URL is denied" do
     act_as users(:seeker)
     get new_amenity_path
 
-    assert_redirected_to root_path
-    assert_equal "Only moderators can do that.", flash[:alert]
+    assert_response :forbidden
+    assert_select "p", /Only moderators can do that/
     assert_no_difference -> { Amenity.count } do
       delete amenity_path(amenities(:wifi))
     end

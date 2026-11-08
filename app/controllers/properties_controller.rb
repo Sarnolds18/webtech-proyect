@@ -1,26 +1,26 @@
 class PropertiesController < ApplicationController
   before_action :require_user, except: %i[index show]
   before_action :set_property, only: %i[show edit update destroy]
-  before_action :require_host, only: %i[edit update destroy]
   before_action :set_form_options, only: %i[new create edit update]
+  after_action :verify_authorized, except: :index
 
   def index
     @properties = Property.includes(:neighborhood, :host, :listings).order(:title)
   end
 
   def show
-    # The host sees every listing of the property, drafts included; everyone else, the published ones.
-    @listings = @property.listings.with_attached_photos.soonest_available
-    @listings = @listings.published unless @property.host == current_user
+    authorize @property
+    # The policy scope hides the drafts from everyone but the host and the moderators.
+    @listings = policy_scope(@property.listings).with_attached_photos.soonest_available
     @reviews = @property.reviews.includes(:author, reply: :author).recent_first
   end
 
   def new
-    @property = current_user.properties.new
+    @property = authorize current_user.properties.new
   end
 
   def create
-    @property = current_user.properties.new(property_params)
+    @property = authorize current_user.properties.new(property_params)
 
     if @property.save
       redirect_to @property, notice: "The property was created. Add a listing to start receiving applications."
@@ -30,9 +30,11 @@ class PropertiesController < ApplicationController
   end
 
   def edit
+    authorize @property
   end
 
   def update
+    authorize @property
     if @property.update(property_params)
       redirect_to @property, notice: "The property was updated."
     else
@@ -41,6 +43,7 @@ class PropertiesController < ApplicationController
   end
 
   def destroy
+    authorize @property
     if @property.destroy
       redirect_to properties_path, notice: "The property was deleted."
     else
@@ -52,11 +55,6 @@ class PropertiesController < ApplicationController
 
   def set_property
     @property = Property.includes(:neighborhood, :host, :amenities).find(params[:id])
-  end
-
-  # Only the host edits or deletes a property. Assignment 4 moves this check to a Pundit policy.
-  def require_host
-    redirect_to @property, alert: "Only the host of this property can change it." unless @property.host == current_user
   end
 
   # Active catalog entries, plus the inactive ones this property already uses so editing keeps them.

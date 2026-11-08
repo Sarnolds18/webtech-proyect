@@ -1,7 +1,8 @@
 # The amenity catalog: everyone browses it, only moderators manage it.
 class AmenitiesController < ApplicationController
-  before_action :require_moderator, except: :index
+  before_action :require_user, except: :index
   before_action :set_amenity, only: %i[edit update destroy]
+  after_action :verify_authorized, except: :index
 
   def index
     @amenities = Amenity.alphabetical
@@ -10,11 +11,11 @@ class AmenitiesController < ApplicationController
   end
 
   def new
-    @amenity = Amenity.new
+    @amenity = authorize Amenity.new
   end
 
   def create
-    @amenity = Amenity.new(amenity_params)
+    @amenity = authorize Amenity.new(amenity_params)
 
     if @amenity.save
       redirect_to amenities_path, notice: "#{@amenity.name} was added to the catalog."
@@ -24,9 +25,11 @@ class AmenitiesController < ApplicationController
   end
 
   def edit
+    authorize @amenity
   end
 
   def update
+    authorize @amenity
     if @amenity.update(amenity_params)
       redirect_to amenities_path, notice: "#{@amenity.name} was updated."
     else
@@ -36,6 +39,7 @@ class AmenitiesController < ApplicationController
 
   # Deleting an amenity also removes it from the properties that had it.
   def destroy
+    authorize @amenity
     @amenity.destroy!
     redirect_to amenities_path, notice: "#{@amenity.name} was deleted from the catalog."
   end

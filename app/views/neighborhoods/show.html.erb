@@ -3,7 +3,7 @@
 <div class="container py-4">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-2">
     <h1 class="fw-bold mb-0"><%= @neighborhood.name %></h1>
-    <% if current_user&.moderator? %>
+    <% if policy(@neighborhood).update? %>
       <div class="d-flex gap-2">
         <%= link_to "Edit", edit_neighborhood_path(@neighborhood), class: "btn btn-outline-primary" %>
         <%= button_to "Delete", neighborhood_path(@neighborhood), method: :delete, class: "btn btn-outline-danger",

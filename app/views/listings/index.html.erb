@@ -1,12 +1,12 @@
 <% content_for :title, "Rooms available - Roomies" %>
-<% filtered = params.values_at(:neighborhood_id, :max_rent, :available_from).any?(&:present?) %>
+<% filtered = params.values_at(:neighborhood_id, :max_rent, :available_from).any?(&:present?) || Array.wrap(params[:amenity_ids]).grep(String).any?(&:present?) %>
 
 <div class="container py-4">
   <h1 class="fw-bold mb-4">Rooms available</h1>
 
   <section class="mb-5" aria-labelledby="filters-heading">
     <h2 id="filters-heading" class="visually-hidden">Filter rooms</h2>
-    <%= render "shared/search_form", neighborhoods: @neighborhoods %>
+    <%= render "shared/search_form", neighborhoods: @neighborhoods, amenities: @amenities %>
   </section>
 
   <section aria-labelledby="results-heading">

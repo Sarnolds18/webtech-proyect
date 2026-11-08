@@ -11,8 +11,10 @@ class ListingsController < ApplicationController
                        .in_neighborhood(params[:neighborhood_id])
                        .under_rent(params[:max_rent])
                        .available_by(params[:available_from])
+                       .with_amenities(Array.wrap(params[:amenity_ids]).grep(String))
                        .soonest_available
     @neighborhoods = Neighborhood.active.alphabetical
+    @amenities = Amenity.active.alphabetical
   end
 
   # A draft is visible only to its host and the moderators.

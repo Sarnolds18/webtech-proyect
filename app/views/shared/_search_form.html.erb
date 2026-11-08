@@ -18,6 +18,37 @@
     <%= form.date_field :available_from, value: params[:available_from], class: "form-control" %>
   </div>
 
+  <% if local_assigns[:amenities].present? %>
+    <% selected_amenity_ids = Array.wrap(params[:amenity_ids]).grep(String) %>
+    <div class="col-12">
+      <details class="amenity-filter" <%= "open" if selected_amenity_ids.compact_blank.any? %>>
+        <summary class="form-label mb-2">
+          Amenities
+          <% if selected_amenity_ids.compact_blank.any? %>
+            <span class="badge text-bg-primary ms-1"><%= selected_amenity_ids.compact_blank.size %> selected</span>
+          <% end %>
+        </summary>
+        <fieldset>
+          <legend class="visually-hidden">Amenities the property must have</legend>
+          <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-2">
+            <% amenities.each do |amenity| %>
+              <div class="col">
+                <div class="form-check">
+                  <%= check_box_tag "amenity_ids[]", amenity.id, selected_amenity_ids.include?(amenity.id.to_s),
+                        id: "amenity_#{amenity.id}", class: "form-check-input" %>
+                  <%= label_tag "amenity_#{amenity.id}", class: "form-check-label" do %>
+                    <i class="bi <%= amenity.icon %> me-1" aria-hidden="true"></i><%= amenity.name %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <p class="form-text mb-0">Rooms whose property has every amenity you check.</p>
+        </fieldset>
+      </details>
+    </div>
+  <% end %>
+
   <div class="col-12">
     <%= form.submit "Search rooms", name: nil, class: "btn btn-primary" %>
   </div>

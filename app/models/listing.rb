@@ -52,6 +52,14 @@ class Listing < ApplicationRecord
   scope :available_by, ->(date) { date.present? ? where(available_from: ..date) : all }
   scope :under_rent, ->(amount) { amount.present? ? where(monthly_rent: ..amount.to_i) : all }
   scope :in_neighborhood, ->(id) { id.present? ? joins(:property).where(properties: { neighborhood_id: id }) : all }
+  # Listings whose property has every one of the given amenities (all of them, not any).
+  scope :with_amenities, ->(ids) {
+    ids = Array(ids).compact_blank.map(&:to_i).uniq
+    next all if ids.empty?
+
+    where(property_id: PropertyAmenity.where(amenity_id: ids).group(:property_id)
+                                      .having("COUNT(DISTINCT amenity_id) = ?", ids.size).select(:property_id))
+  }
   scope :furnished_only, -> { where(furnished: true) }
   scope :with_private_bathroom, -> { where(private_bathroom: true) }
   scope :cheapest_first, -> { order(:monthly_rent) }

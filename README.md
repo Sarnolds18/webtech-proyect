@@ -36,8 +36,8 @@ webtech-proyect/
 ```
 
 Authorization lives in `app/policies/` (one Pundit policy per model, all inheriting from
-`BasePolicy`) and `app/controllers/concerns/authorization.rb`. The versioned API
-(`app/controllers/api/v1/`) is being integrated separately.
+`BasePolicy`) and `app/controllers/concerns/authorization.rb`. The versioned public JSON API
+lives in `app/controllers/api/v1/` and `app/views/api/v1/` (see [API](#api)).
 
 ## Getting Started
 
@@ -136,7 +136,7 @@ Host and seeker describe how a member uses the app; they are not additional valu
 | Path | Page |
 |---|---|
 | `/` | Home (the landing page) |
-| `/listings` | Published listings, with filters by neighborhood, maximum rent and availability date |
+| `/listings` | Published listings, with filters by neighborhood, maximum rent, availability date and amenities; updates without reloading through the API |
 | `/listings/:id` | Listing details; a draft is restricted to its host and the moderators |
 | `/properties`, `/properties/:id` | Properties, their listings and reviews |
 | `/neighborhoods`, `/neighborhoods/:id` | Neighborhoods and their listings |
@@ -156,9 +156,8 @@ Passwords need at least 8 characters; changing one in the profile requires the c
 A bio may contain up to 500 characters. Phone numbers are optional and accept a leading `+`,
 digits, spaces and hyphens (7–20 characters).
 
-The API integration adds `/api/v1/listings`,
-`/api/v1/listings/:id`, `/api/v1/neighborhoods` and `/api/v1/amenities` (public JSON data).
-These endpoints are not present in this checkout yet.
+The public JSON API is served under `/api/v1`: `/api/v1/listings`, `/api/v1/listings/:id`,
+`/api/v1/neighborhoods` and `/api/v1/amenities`. See [API](#api).
 
 ## Roles and permissions
 
@@ -283,7 +282,12 @@ The static landing page in [`landing/`](./landing) is kept as history; the app's
   page.
 - Moderation: members report listings; moderators dismiss reports or withdraw the listing, delete
   any review, and every decision is logged as a moderation action.
-- The public API and search with `fetch` are integrated separately.
+- Search by amenities: a listing matches when its property has every amenity checked, on the
+  home page and on `/listings`.
+- A versioned, public JSON API (`/api/v1`) for published listings, neighborhoods and amenities,
+  with filters, sorting, pagination, JSON errors (400/404) and no personal data. See [API](#api).
+- The `/listings` search page consumes that API with `fetch` and redraws the results without
+  reloading; without JavaScript it still works as a normal form.
 
 ## After Pulling Changes
 
@@ -293,6 +297,171 @@ Run these two commands every time you pull, before starting the application:
 bundle install        # installs any gem that was added or updated in Gemfile.lock
 bin/rails db:migrate  # applies any new migration
 ```
+
+## API
+
+Roomies has a public, read-only JSON API for the published listings and the catalogs used to
+filter them. It needs no account and no token, and it never returns personal data.
+
+- **Base URL:** `/api/v1` (e.g. `http://localhost:3000/api/v1` in development). The version is
+  part of the path, so a future `/api/v2` can change the format without breaking `/api/v1` clients.
+- **Format:** JSON (`Content-Type: application/json`) for every response, errors included.
+- **Methods:** only `GET`. Any other path or method under `/api/v1` answers a JSON 404.
+- **Code:** `app/controllers/api/v1/` (controllers) and `app/views/api/v1/` (Jbuilder views). The
+  API controllers inherit from `ActionController::API`, so sessions and Pundit do not apply: the
+  queries themselves only read public records.
+
+### Endpoints
+
+| Method | Path | Returns |
+|---|---|---|
+| `GET` | `/api/v1/listings` | Published listings, filtered, sorted and paginated |
+| `GET` | `/api/v1/listings/:id` | One published listing, with its description, house rules and photos |
+| `GET` | `/api/v1/neighborhoods` | Active neighborhoods (`id`, `name`, `city`), to build the neighborhood filter |
+| `GET` | `/api/v1/amenities` | Active amenities (`id`, `name`, `icon`), to build the amenity filter |
+
+Only **published** listings exist for the API: a draft, reserved, rented or withdrawn listing
+answers 404 on `/api/v1/listings/:id`, exactly like an id that does not exist.
+
+### Parameters of `GET /api/v1/listings`
+
+Every parameter is optional; filters combine with AND.
+
+| Parameter | Type | Example | Default | Meaning |
+|---|---|---|---|---|
+| `neighborhood_id` | positive integer | `3` | — | Only listings in this neighborhood |
+| `max_rent` | positive integer (CLP) | `350000` | — | Monthly rent at most this amount |
+| `available_by` | date `YYYY-MM-DD` | `2026-12-01` | — | Rooms available on or before this date |
+| `amenity_ids` | list of positive integers | `amenity_ids=1,3` or `amenity_ids[]=1&amenity_ids[]=3` | — | The property has **every** amenity listed |
+| `furnished` | `true` / `false` (`1` / `0`) | `true` | `false` | `true`: only furnished rooms |
+| `private_bathroom` | `true` / `false` (`1` / `0`) | `true` | `false` | `true`: only rooms with a private bathroom |
+| `sort` | `soonest`, `cheapest`, `newest` | `cheapest` | `soonest` | Earliest availability, lowest rent, or most recently created first |
+| `page` | positive integer | `2` | `1` | Page number; a page past the end returns an empty `data` |
+| `per_page` | integer 1–50 | `20` | `12` | Listings per page |
+
+An invalid value never falls back silently to a default: it answers 400 and names the parameter.
+
+### Responses
+
+`GET /api/v1/listings?per_page=1&sort=cheapest` (real response from the seeds, the amenities
+list and photo URL shortened):
+
+```json
+{
+  "data": [
+    {
+      "id": 18,
+      "title": "Budget room near Plaza Ñuñoa",
+      "status": "published",
+      "monthly_rent": 210000,
+      "deposit": 0,
+      "currency": "CLP",
+      "available_from": "2026-11-13",
+      "minimum_stay_months": 1,
+      "furnished": true,
+      "private_bathroom": false,
+      "neighborhood": { "id": 11, "name": "Ñuñoa", "city": "Santiago" },
+      "property": {
+        "id": 8,
+        "title": "Garden house in Plaza Ñuñoa",
+        "property_type": "house",
+        "bedrooms": 4,
+        "bathrooms": 2,
+        "amenities": [
+          { "id": 13, "name": "WiFi", "icon": "bi-wifi" },
+          { "id": 14, "name": "Washing machine", "icon": "bi-water" }
+        ]
+      },
+      "rating": { "average": 4.5, "count": 2 },
+      "cover_photo_url": "http://localhost:3000/rails/active_storage/representations/redirect/.../nunoa.jpg",
+      "links": {
+        "self": "http://localhost:3000/api/v1/listings/18",
+        "html": "http://localhost:3000/listings/18"
+      }
+    }
+  ],
+  "meta": { "page": 1, "per_page": 1, "total": 8, "total_pages": 8 },
+  "links": {
+    "self": "http://localhost:3000/api/v1/listings?per_page=1&sort=cheapest",
+    "next": "http://localhost:3000/api/v1/listings?page=2&per_page=1&sort=cheapest",
+    "prev": null
+  }
+}
+```
+
+- `data`: the listings of the page. `rating.average` is `null` when the property has no reviews;
+  `cover_photo_url` is `null` when the listing has no photographs (it is a small 600×400 variant).
+- `meta`: the page, the page size, the total number of listings that match and the number of pages.
+- `links`: absolute URLs of this page and of the next and previous ones (`null` at the ends). They
+  keep the filters, so a client follows `links.next` until it is `null`.
+
+`GET /api/v1/listings/:id` answers `{ "data": { ... } }` with the same fields, plus
+`description` and `house_rules` as **plain text** (the HTML formatting stays on the listing page),
+and `photos`: a list of `{ "card_url", "large_url" }` for every photograph.
+
+`GET /api/v1/neighborhoods` and `GET /api/v1/amenities` answer
+`{ "data": [{ "id": 15, "name": "La Reina", "city": "Santiago" }, ...] }` and
+`{ "data": [{ "id": 13, "name": "WiFi", "icon": "bi-wifi" }, ...] }`, in alphabetical order.
+
+### Errors and status codes
+
+Every error has the same shape:
+
+```json
+{ "error": { "status": 400, "code": "invalid_parameter", "message": "max_rent must be a positive integer", "parameter": "max_rent" } }
+```
+
+| Status | `code` | When |
+|---|---|---|
+| `200 OK` | — | The request worked (also when no listing matches: `data` is `[]`) |
+| `400 Bad Request` | `invalid_parameter` | A parameter has a wrong value, e.g. `max_rent=abc`, `available_by=31-12-2026`, `per_page=500`, `sort=price`. `parameter` names it |
+| `404 Not Found` | `not_found` | The listing does not exist or is not published, or the endpoint does not exist (e.g. `/api/v1/users`) |
+
+### What the API never exposes, and why
+
+Applications are private and Roomies' listings are public, so the API returns the room and never
+the people around it:
+
+- **Hosts:** no name, email, phone or id. A seeker contacts the host by applying on the site.
+- **Property address:** only the neighborhood and city; the exact address is not public data.
+- **Applications and applicants:** not even how many there are (the project rule is that visitors
+  never see who applied to a listing).
+- **Reviews:** only the average rating and the number of reviews, never their authors or text.
+- **Reports, moderation actions and non-published listings** (drafts included).
+
+The controller tests in `test/controllers/api/v1/` check this on every response: no emails,
+addresses or names, and no `host`, `address`, `email_address`, `phone`, `applications` or
+`author` keys.
+
+### Examples
+
+```bash
+# Rooms in neighborhood 1 under $350.000 whose property has amenities 1 and 3, cheapest first
+curl "http://localhost:3000/api/v1/listings?neighborhood_id=1&max_rent=350000&amenity_ids=1,3&sort=cheapest"
+
+# Furnished rooms available by December 1st, 5 per page, second page
+curl "http://localhost:3000/api/v1/listings?furnished=true&available_by=2026-12-01&per_page=5&page=2"
+
+# One listing, and the catalogs used to build the filters
+curl http://localhost:3000/api/v1/listings/18
+curl http://localhost:3000/api/v1/neighborhoods
+curl http://localhost:3000/api/v1/amenities
+
+# Errors: a 400 that names the parameter, and a 404 (-i shows the status line)
+curl -i "http://localhost:3000/api/v1/listings?max_rent=abc"
+curl -i http://localhost:3000/api/v1/listings/999999
+```
+
+Ids change every time the seeds run: take them from `/api/v1/neighborhoods`, `/api/v1/amenities`
+or the first `/api/v1/listings` response.
+
+### The search page uses this API
+
+The `/listings` page is first rendered by the server, so it works without JavaScript. With
+JavaScript, `app/javascript/controllers/listing_search_controller.js` (Stimulus) sends every change
+of the filters to `GET /api/v1/listings` with `fetch`, redraws the cards from the JSON without
+reloading the page, shows the API's error messages, loads more rooms by following `links.next`, and
+keeps the filters in the address bar so a reload or a shared link shows the same search.
 
 ## Course
 

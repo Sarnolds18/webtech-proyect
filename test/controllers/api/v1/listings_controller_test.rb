@@ -170,6 +170,23 @@ module Api
         assert_equal "Unknown API endpoint.", json["error"]["message"]
       end
 
+      test "the API is read-only: other methods answer 404 in JSON" do
+        post api_v1_listings_path, params: { title: "Spam" }
+
+        assert_response :not_found
+        assert_equal "not_found", json["error"]["code"]
+        assert_no_difference("Listing.count") { delete api_v1_listing_path(listings(:cheap)) }
+        assert_response :not_found
+      end
+
+      test "a page past the end is empty, not an error" do
+        get api_v1_listings_path(page: 5)
+
+        assert_response :ok
+        assert_equal [], json["data"]
+        assert_equal 2, json["meta"]["total"]
+      end
+
       test "is public: no sign in, and a signed in user sees the same" do
         act_as users(:host)
 

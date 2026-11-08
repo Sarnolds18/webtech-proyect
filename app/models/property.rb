@@ -7,7 +7,8 @@ class Property < ApplicationRecord
   has_many :listings, dependent: :restrict_with_error
   has_many :reviews, dependent: :destroy
 
-  enum :property_type, { apartment: "apartment", house: "house", studio: "studio" }
+  # An unknown or missing type is a validation error, not an exception or a database error.
+  enum :property_type, { apartment: "apartment", house: "house", studio: "studio" }, validate: true
 
   validates :title, :address, presence: true
   validates :bedrooms, :bathrooms, numericality: { only_integer: true, greater_than_or_equal_to: 1 }

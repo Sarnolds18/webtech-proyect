@@ -3,7 +3,8 @@ class Report < ApplicationRecord
   belongs_to :reporter, class_name: "User"
   has_many :moderation_actions, dependent: :nullify
 
-  enum :reason, { fraudulent: "fraudulent", misleading: "misleading", offensive: "offensive" }
+  # An unknown value sent by hand is a validation error, not an exception (blank is caught by presence).
+  enum :reason, { fraudulent: "fraudulent", misleading: "misleading", offensive: "offensive" }, validate: { allow_nil: true }
   enum :status, { open: "open", dismissed: "dismissed", action_taken: "action_taken" }, default: :open
 
   validates :reason, presence: true

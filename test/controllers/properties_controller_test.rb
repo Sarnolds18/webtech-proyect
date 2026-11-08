@@ -18,6 +18,16 @@ class PropertiesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Sign in or create an account to continue.", flash[:alert]
   end
 
+  test "an unknown property type is a form error, not a server error" do
+    act_as users(:seeker)
+
+    assert_no_difference -> { Property.count } do
+      post properties_path, params: { property: property_params(property_type: "castle") }
+    end
+    assert_response :unprocessable_entity
+    assert_select "#property_type_error", /is not included in the list/
+  end
+
   test "the acting user creates a property with amenities and becomes its host" do
     act_as users(:seeker)
     get new_property_path

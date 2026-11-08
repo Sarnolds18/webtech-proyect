@@ -48,6 +48,7 @@ class OtherPoliciesTest < ActiveSupport::TestCase
     assert ReportPolicy.new(users(:moderator), report).create?
     assert_not ReportPolicy.new(users(:host), Report.new(listing: listings(:cheap))).create?
     assert_not ReportPolicy.new(nil, report).create?
+    assert_not ReportPolicy.new(users(:seeker), Report.new(listing: listings(:draft))).create?
 
     assert ReportPolicy.new(users(:moderator), report).take_action?
     assert_not ReportPolicy.new(users(:seeker), report).dismiss?

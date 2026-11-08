@@ -26,6 +26,19 @@ class ModerationFlowTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "a hand-made report with an unknown reason or on a hidden draft is not saved" do
+    act_as users(:seeker)
+
+    assert_no_difference -> { Report.count } do
+      post listing_reports_path(@listing), params: { report: { reason: "bogus" } }
+      assert_redirected_to listing_path(@listing)
+      assert_match "Reason is not included in the list", flash[:alert]
+
+      post listing_reports_path(listings(:draft)), params: { report: { reason: "fraudulent" } }
+      assert_response :forbidden
+    end
+  end
+
   test "members cannot open or resolve the reports" do
     report = Report.create!(listing: @listing, reporter: users(:seeker), reason: :fraudulent)
     act_as users(:other_seeker)

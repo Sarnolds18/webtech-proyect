@@ -68,4 +68,14 @@ Rails.application.routes.draw do
       patch :reschedule
     end
   end
+
+  # Public, read-only JSON API. No personal data: see README "API".
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      resources :listings, only: %i[index show]
+      resources :neighborhoods, only: :index
+      resources :amenities, only: :index
+      match "*unmatched", to: "base#route_not_found", via: :all
+    end
+  end
 end

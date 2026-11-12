@@ -88,8 +88,9 @@ production:
   primary: &primary_production
     <<: *default
     database: roomies_production
+    host: <%= ENV.fetch("DB_HOST", "127.0.0.1").to_json %>
     username: roomies
-    password: <%= ENV["ROOMIES_DATABASE_PASSWORD"] %>
+    password: <%= ENV["ROOMIES_DATABASE_PASSWORD"].to_json %>
   cache:
     <<: *primary_production
     database: roomies_production_cache

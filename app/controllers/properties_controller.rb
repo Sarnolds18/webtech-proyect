@@ -12,7 +12,7 @@ class PropertiesController < ApplicationController
     authorize @property
     # The policy scope hides the drafts from everyone but the host and the moderators.
     @listings = policy_scope(@property.listings).with_attached_photos.soonest_available
-    @reviews = @property.reviews.includes(:author, reply: :author).recent_first
+    @reviews = @property.reviews.includes(:author, :property, reply: :author).recent_first
   end
 
   def new

@@ -20,7 +20,7 @@ class ListingsController < ApplicationController
   # A draft is visible only to its host and the moderators.
   def show
     authorize @listing
-    @reviews = @listing.property.reviews.includes(:author, reply: :author).recent_first
+    @reviews = @listing.property.reviews.includes(:author, :property, reply: :author).recent_first
   end
 
   # New listings start as drafts (the column default) until the host publishes them.

@@ -18,10 +18,5 @@
 
   <%= simple_format review.comment, class: "mb-0" %>
 
-  <% if review.reply %>
-    <div class="bg-light border-start border-3 border-primary rounded-end p-3 mt-3">
-      <p class="small fw-semibold mb-1">Reply from <%= review.reply.author.name %>, the host</p>
-      <%= simple_format review.reply.comment, class: "small mb-0" %>
-    </div>
-  <% end %>
+  <%= render "reviews/reply", review: review %>
 </article>

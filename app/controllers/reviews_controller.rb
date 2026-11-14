@@ -12,7 +12,7 @@ class ReviewsController < ApplicationController
       redirect_to @review.property, notice: "Thank you! Your review was published."
     else
       @listings = policy_scope(@property.listings).with_attached_photos.soonest_available
-      @reviews = @property.reviews.includes(:author, reply: :author).recent_first
+      @reviews = @property.reviews.includes(:author, :property, reply: :author).recent_first
       render "properties/show", status: :unprocessable_entity
     end
   end

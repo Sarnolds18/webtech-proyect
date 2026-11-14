@@ -51,7 +51,10 @@ Rails.application.routes.draw do
       patch :take_action
     end
   end
-  resources :reviews, only: :destroy
+  resources :reviews, only: :destroy do
+    # The host of the property answers a review once.
+    resource :reply, only: %i[create destroy], controller: "review_replies"
+  end
   resources :applications, only: %i[index show] do
     member do
       patch :withdraw

@@ -1,0 +1,39 @@
+<%# The host's reply to a review, or the form to write it when the host is looking. ReviewRepliesController
+    replaces this block (by its id) after publishing or deleting a reply. `reply_form` is a reply that
+    failed to save, shown again with its error. %>
+<% reply_form = local_assigns[:reply_form] %>
+<% reply = review.reply %>
+<%= tag.div id: dom_id(review, :reply) do %>
+  <% if reply %>
+    <div class="bg-light border-start border-3 border-primary rounded-end p-3 mt-3">
+      <p class="d-flex justify-content-between align-items-center gap-2 small fw-semibold mb-1">
+        <span>Reply from <%= reply.author.name %>, the host</span>
+        <% if policy(reply).destroy? %>
+          <%= button_to review_reply_path(review), method: :delete, class: "btn btn-sm btn-outline-danger",
+                aria: { label: "Delete the reply from #{reply.author.name}" },
+                form: { data: { turbo_confirm: "Delete this reply? This cannot be undone." } } do %>
+            <i class="bi bi-trash" aria-hidden="true"></i>
+          <% end %>
+        <% end %>
+      </p>
+      <%= simple_format reply.comment, class: "small mb-0" %>
+    </div>
+
+  <% elsif policy(reply_form || ReviewReply.new(review: review)).create? %>
+    <% reply_form ||= ReviewReply.new(review: review) %>
+    <% field_id = dom_id(review, :reply_comment) %>
+    <%= form_with model: reply_form, url: review_reply_path(review), class: "mt-3" do |form| %>
+      <%= form.label :comment, "Reply as the host", for: field_id, class: "form-label small fw-semibold" %>
+      <%= form.text_area :comment, id: field_id, rows: 2, required: true,
+            class: class_names("form-control form-control-sm", "is-invalid": reply_form.errors.any?),
+            aria: { describedby: ("#{field_id}_error" if reply_form.errors.any?) },
+            placeholder: "Thank the guest or explain something about the property..." %>
+      <% if reply_form.errors.any? %>
+        <div class="invalid-feedback d-block" id="<%= field_id %>_error">
+          <%= reply_form.errors.full_messages.to_sentence %>
+        </div>
+      <% end %>
+      <%= form.submit "Publish reply", class: "btn btn-sm btn-outline-primary mt-2" %>
+    <% end %>
+  <% end %>
+<% end %>

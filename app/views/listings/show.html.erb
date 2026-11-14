@@ -6,7 +6,10 @@
     <div class="col-lg-8">
       <%= render "listings/photo_gallery", listing: @listing, alt: "Room in #{property.neighborhood.name}" %>
 
-      <h1 class="fw-bold mb-2"><%= @listing.title %></h1>
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+        <h1 class="fw-bold mb-0"><%= @listing.title %></h1>
+        <%= render "saved_listings/button", listing: @listing, class: "mt-lg-2" %>
+      </div>
       <p class="d-flex flex-wrap align-items-center gap-2 text-muted mb-4">
         <%= status_badge(@listing.status) %>
         <span>

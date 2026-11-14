@@ -1,0 +1,20 @@
+<%# The Save / Saved toggle of a listing. SavedListingsController replaces it (by its id) after each
+    click. Visitors are invited to sign in; the host of the listing gets nothing. %>
+<% saved = local_assigns.fetch(:saved) { current_user&.saved_listings&.exists?(listing_id: listing.id) } %>
+<%= tag.div id: dom_id(listing, :save), class: local_assigns[:class] do %>
+  <% if current_user.nil? %>
+    <%= link_to new_session_path, class: "btn btn-outline-primary btn-sm" do %>
+      <i class="bi bi-bookmark me-1" aria-hidden="true"></i>Sign in to save
+    <% end %>
+  <% elsif saved %>
+    <%= button_to listing_save_path(listing), method: :delete, class: "btn btn-primary btn-sm w-100",
+          aria: { pressed: "true", label: "Saved. Remove #{listing.title} from your saved listings" } do %>
+      <i class="bi bi-bookmark-fill me-1" aria-hidden="true"></i>Saved
+    <% end %>
+  <% elsif policy(SavedListing.new(user: current_user, listing: listing)).create? %>
+    <%= button_to listing_save_path(listing), class: "btn btn-outline-primary btn-sm w-100",
+          aria: { pressed: "false", label: "Save #{listing.title}" } do %>
+      <i class="bi bi-bookmark me-1" aria-hidden="true"></i>Save
+    <% end %>
+  <% end %>
+<% end %>

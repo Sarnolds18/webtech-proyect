@@ -33,6 +33,9 @@ Rails.application.routes.draw do
     # Seekers apply from the listing page; the host answers them in the listing's inbox.
     resources :applications, only: :create
     resource :inbox, only: :show
+
+    # Members bookmark listings: POST saves, DELETE unsaves. Both are idempotent.
+    resource :save, only: %i[create destroy], controller: "saved_listings"
   end
   resources :neighborhoods
   resources :amenities, except: :show

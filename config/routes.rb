@@ -37,6 +37,7 @@ Rails.application.routes.draw do
     # Members bookmark listings: POST saves, DELETE unsaves. Both are idempotent.
     resource :save, only: %i[create destroy], controller: "saved_listings"
   end
+  get "saved", to: "saved_listings#index", as: :saved_listings
   resources :neighborhoods
   resources :amenities, except: :show
 

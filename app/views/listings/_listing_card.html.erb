@@ -1,6 +1,8 @@
-<%# The one place where the markup of a listing card lives. Render it inside a Bootstrap row. %>
+<%# The one place where the markup of a listing card lives. Render it inside a Bootstrap row.
+    Optional locals: `id` for the column, and `footer`, HTML (e.g. a button) shown under the card body
+    and kept clickable above the card's stretched link. %>
 <% neighborhood = listing.property.neighborhood %>
-<div class="col">
+<%= tag.div class: "col", id: local_assigns[:id] do %>
   <article class="card h-100 shadow-sm overflow-hidden listing-card">
     <%= listing_cover_photo(listing, css: "card-img-top", alt: "Room in #{neighborhood.name}") %>
     <% unless listing.published? %>
@@ -27,5 +29,9 @@
         Available from <strong><%= long_date(listing.available_from) %></strong>
       </p>
     </div>
+
+    <% if local_assigns[:footer] %>
+      <div class="card-footer bg-white border-0 px-4 pb-4 pt-0 position-relative z-2"><%= footer %></div>
+    <% end %>
   </article>
-</div>
+<% end %>

@@ -75,4 +75,40 @@ class SavedListingsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :forbidden
   end
+
+  test "the saved page lists only the member's own saved listings, with their status" do
+    @seeker.saved_listings.create!(listing: @listing)
+    users(:other_seeker).saved_listings.create!(listing: listings(:pricey))
+    listings(:cheap).withdraw!
+
+    act_as @seeker
+    get saved_listings_path
+    assert_response :success
+    assert_select "a.nav-link[aria-current=page]", "Saved"
+    assert_select "#saved_card_listing_#{@listing.id}" do
+      assert_select ".badge", /Withdrawn/i
+      assert_select "button[aria-pressed=true]"
+    end
+    assert_select "#saved_card_listing_#{listings(:pricey).id}", count: 0
+  end
+
+  test "unsaving on the saved page removes the card and shows the empty state when none are left" do
+    @seeker.saved_listings.create!(listing: @listing)
+    act_as @seeker
+
+    delete listing_save_path(@listing), as: :turbo_stream
+    assert_select "turbo-stream[action=remove][target=saved_card_listing_#{@listing.id}]"
+    assert_select "turbo-stream[action=update][target=saved_listings]", /not saved any listings/
+
+    get saved_listings_path
+    assert_select "#saved_listings", /not saved any listings/
+  end
+
+  test "visitors are sent to sign in from the saved page and do not see the link" do
+    get root_path
+    assert_select "a.nav-link", text: "Saved", count: 0
+
+    get saved_listings_path
+    assert_redirected_to new_session_path
+  end
 end

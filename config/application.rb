@@ -23,5 +23,9 @@ module Roomies
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Placeholder sender for development and test, where emails are never really sent. Production
+    # replaces it with the address verified in Brevo.
+    config.action_mailer.default_options = { from: "Roomies <no-reply@roomies.test>" }
   end
 end

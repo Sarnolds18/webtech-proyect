@@ -53,22 +53,26 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Emails are delivered by a Solid Queue job, so a failed delivery is raised there and shows up in
+  # the logs (and in the failed jobs) instead of being silently dropped.
+  config.action_mailer.raise_delivery_errors = true
 
   # Links in emails point to the public HTTPS host. APP_HOST is set by config/deploy.yml; it is absent
   # while the Docker image precompiles assets, so it must not be required at boot.
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "localhost"), protocol: "https" }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # Emails go out through Brevo's SMTP relay. The login and SMTP key live in the encrypted credentials
+  # (bin/rails credentials:edit → smtp: user_name, password, from), never in the repository.
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    user_name: Rails.application.credentials.dig(:smtp, :user_name),
+    password: Rails.application.credentials.dig(:smtp, :password),
+    address: "smtp-relay.brevo.com",
+    port: 587,
+    authentication: :plain,
+    enable_starttls_auto: true
+  }
+  config.action_mailer.default_options = { from: Rails.application.credentials.dig(:smtp, :from) }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

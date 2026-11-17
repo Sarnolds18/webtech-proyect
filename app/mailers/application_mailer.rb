@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "Roomies <no-reply@roomies.test>"
+  # The sender comes from config.action_mailer.default_options (a real Brevo address in production).
   layout "mailer"
 end

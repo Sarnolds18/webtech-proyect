@@ -16,7 +16,11 @@ module Api
         assert_equal [
           { "id" => neighborhoods(:providencia).id, "name" => "Providencia", "city" => "Santiago" },
           { "id" => neighborhoods(:nunoa).id, "name" => "Ñuñoa", "city" => "Santiago" }
-        ], json["data"]
+        ].sort_by { it["id"] }, json["data"].sort_by { it["id"] }
+
+        # Alphabetical by name, as the database sorts it: where "Ñ" falls depends on the collation of
+        # each PostgreSQL install, so the expected order is read from the same database.
+        assert_equal Neighborhood.active.alphabetical.pluck(:id), json["data"].pluck("id")
       end
 
       test "lists the active amenities" do

@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ListingTest < ActiveSupport::TestCase
+  include ActionMailer::TestHelper
+
   setup do
     @listing = listings(:cheap)
   end
@@ -181,6 +183,29 @@ class ListingTest < ActiveSupport::TestCase
     assert applications(:pending).reload.rejected?
     assert shortlisted.reload.rejected?
     assert accepted.reload.accepted?
+  end
+
+  test "withdrawing notifies each seeker whose application was still undecided" do
+    shortlisted = Application.create!(listing: @listing, seeker: users(:other_seeker), status: :shortlisted,
+                                      message: "Count me in.", move_in_date: 20.days.from_now.to_date, stay_months: 6)
+
+    assert_enqueued_emails 2 do
+      @listing.withdraw!
+    end
+    [ applications(:pending), shortlisted ].each do |application|
+      assert_enqueued_email_with ApplicationNotificationMailer, :answered,
+        params: { application: application, status: "rejected" }
+    end
+  end
+
+  test "withdrawing does not notify seekers whose application was already decided" do
+    @listing.update!(status: :reserved)
+    applications(:pending).update!(status: :accepted)
+
+    assert_enqueued_emails 0 do
+      @listing.withdraw!
+    end
+    assert applications(:pending).reload.accepted?
   end
 
   test "a reserved listing can be withdrawn" do

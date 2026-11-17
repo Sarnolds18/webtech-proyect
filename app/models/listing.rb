@@ -93,11 +93,12 @@ class Listing < ApplicationRecord
   end
 
   # Withdrawing also answers the applications still waiting for a decision: they are rejected,
-  # together with the change of state or not at all.
+  # together with the change of state or not at all. Like Application#accept!, each one is rejected
+  # through the model so its seeker is notified after the transaction commits.
   def withdraw!
     transaction do
       transition_to!(:withdrawn, allowed: withdrawable?, otherwise: "cannot be withdrawn once it is #{status}")
-      applications.undecided.update_all(status: "rejected", updated_at: Time.current)
+      applications.undecided.find_each(&:reject!)
     end
   end
 

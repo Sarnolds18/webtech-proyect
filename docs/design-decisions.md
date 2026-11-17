@@ -42,6 +42,36 @@ Writing the models showed the first diagram was heavier than the domain needs:
 | Visit 1-to-1 with application | many visits per application | Redoing a cancelled visit keeps the history. |
 | — | `users.status`, `reports.reason/status` enums, DB `CHECK` constraints, partial unique index | Support suspension, moderation queues, and enforce business rules in the database. |
 
+## Authorization with Pundit and a closed `BasePolicy`
+
+Every web controller includes Pundit through the `Authorization` concern, and calls `authorize` or `policy_scope` on each action (`verify_authorized` fails the request if one is forgotten). Hiding a button is only a courtesy; the policy is what blocks a request typed by hand.
+
+- **`BasePolicy`, not `ApplicationPolicy`**: Pundit looks up `ApplicationPolicy` for the `Application` model (a seeker's application), so the shared base needed another name.
+- **Closed by default**: every action in `BasePolicy` answers `false`, and each policy opens only what the permission table allows. A new action is forbidden until someone decides who may run it.
+- **Ownership before role**: host and seeker are not account types, so most rules ask "is this yours?" (the host of the property, the seeker of the application). `moderator` adds a few powers on top; a visitor is simply `user == nil`, and every rule answers for it.
+- **Scopes for privacy**: lists come from `policy_scope`, so applications, visits and inboxes only contain rows the user takes part in. A denied request gets a 403 page that explains why (or a frame/JSON version of it), and a visitor is sent to sign in instead.
+
+## A public API without personal data
+
+`/api/v1` serves published listings, neighborhoods and amenities as JSON for the search page, which consumes it with `fetch`.
+
+- It inherits from `ActionController::API`, not `ApplicationController`: no session, no Pundit, read-only. Everything it returns is public by construction, instead of being filtered per user.
+- **No personal data**: a listing carries its property without the address or the host, and its rating as average and count only, without review authors. Rich text is sent as plain text, never HTML.
+- A listing that is not published answers 404, exactly like an id that does not exist, so the API does not reveal drafts. Invalid filters answer 400 with the offending parameter, in one error format for every endpoint.
+- Versioned under `v1`, paginated with `meta` and `links`, so the client never builds URLs by hand.
+
+## State changes that happen together or not at all
+
+Changes that touch several rows run in one transaction, so a failure leaves nothing half done:
+
+- **Accepting an application** locks the listing row, accepts the application, rejects every other undecided one and reserves the listing. The lock stops two clicks from accepting two applicants; the partial unique index on accepted applications is the last line of defence.
+- **Withdrawing a listing** rejects its undecided applications, and **taking action on a report** withdraws the listing, closes its open reports and logs the `ModerationAction`.
+- Rejections go through the model (`reject!`), not `update_all`, so callbacks run and each seeker is emailed. The emails are sent with `after_commit`, so a rolled-back transaction never notifies anybody.
+
+## Emails in the background with Solid Queue
+
+Notifications (new application for the host, answer for the seeker, password reset) are sent with `deliver_later`, so a slow or failing SMTP server never delays the request. Jobs run on Solid Queue, Rails' database-backed queue, instead of Redis and Sidekiq: it needs no extra service. In production it runs inside Puma (`SOLID_QUEUE_IN_PUMA`), so the whole app is one container plus Postgres, and emails go out through Brevo's SMTP relay with the credentials kept in `config/credentials.yml.enc`.
+
 ## Why the landing page keeps 4 "how it works" steps
 
 The brief describes three steps — *publish or search, apply, visit and move in* — with the last one combined. The landing page keeps **Visit** and **Move in** as separate cards because they are distinct moments with their own state: a visit (`proposed/confirmed/completed`) happens before the decision, while moving in only follows an `accepted` application and a `reserved` listing. Merging them would hide that an applicant can be rejected after a visit. This is a minor, deliberate deviation from the brief's wording.

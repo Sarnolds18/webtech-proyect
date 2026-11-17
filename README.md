@@ -221,8 +221,8 @@ Every account uses `password123`.
 
 Password resets and application notifications use Action Mailer with `deliver_later` through
 Active Job. A new application emails its host; a shortlist, acceptance or rejection emails the
-seeker. Accepting an applicant also emails every automatically rejected seeker. Notifications
-are enqueued after commit, so a rolled-back acceptance sends no answer emails.
+seeker. Accepting an applicant, or withdrawing a listing, also emails every automatically rejected
+seeker. Notifications are enqueued after commit, so a rolled-back acceptance sends no answer emails.
 
 In development, messages are written to **`tmp/mails/`** rather than sent by SMTP. Restart
 `bin/dev` after email configuration changes. Visit **`/rails/mailers`** for password reset and
@@ -232,8 +232,11 @@ separate worker. Seeding also runs the application's notification callbacks, so 
 emails can appear in `tmp/mails/`.
 
 Production uses Solid Queue. The Kamal configuration sets `SOLID_QUEUE_IN_PUMA: true` to start
-its supervisor in Puma. Before deployment, configure the production mail host, sender and SMTP
-credentials; the current production configuration still contains placeholder values.
+its supervisor in Puma. Emails are delivered for real through **Brevo's SMTP relay**
+(`smtp-relay.brevo.com:587`). The SMTP login, key and sender address live in the encrypted
+credentials under `smtp:` (`bin/rails credentials:edit`, which needs `config/master.key`), and the
+links in the emails point to the public host (`APP_HOST`). A failed delivery is raised inside the
+job, so it shows up in `bin/kamal app logs`.
 
 ### Common problems
 
@@ -288,6 +291,51 @@ The static landing page in [`landing/`](./landing) is kept as history; the app's
   with filters, sorting, pagination, JSON errors (400/404) and no personal data. See [API](#api).
 - The `/listings` search page consumes that API with `fetch` and redraws the results without
   reloading; without JavaScript it still works as a normal form.
+
+## Final Demo — Roomies in Production
+
+- **Saved listings**: a signed-in member saves a listing from its page (the bookmark toggles
+  without reloading) and finds it later on **`/saved`**, which also flags listings that are no
+  longer published.
+- **Host replies to reviews**: the host of a property answers each review once, below the review.
+- **Real emails in production** through Brevo SMTP: password reset and application notifications
+  reach the inbox, and withdrawing a listing now emails every seeker whose application was still
+  undecided.
+- **Deployed with Kamal** on an AWS EC2 server, over HTTPS with a Let's Encrypt certificate.
+
+### Public URL
+
+The server has no fixed IP: AWS gives it a new public IP each time the instance starts, so the
+address is not written here. The app is served at
+
+```
+https://<server-ip-with-dashes>.sslip.io      e.g. 3.85.12.40 → https://3-85-12-40.sslip.io
+```
+
+`sslip.io` resolves that name to the IP, so no domain is needed. After the instance starts with a
+new IP, redeploy so the proxy, the certificate and `APP_HOST` (the host Rails accepts and links to
+in emails) follow it:
+
+```bash
+export ROOMIES_SERVER_IP=<new public IP>
+bin/kamal deploy
+```
+
+Check `https://<host>/up` (200) and the padlock before sharing the URL.
+
+### Demo accounts
+
+The production database is loaded with the seeds (`bin/kamal app exec "bin/rails db:seed"`), so the
+[test users](#test-users) work there too, all with the password **`password123`**:
+
+| Role in the demo | User | Email |
+|---|---|---|
+| Seeker (member) | Sofía Araya | `sofia.araya@roomies.test` |
+| Host (member) | Valentina Soto | `valentina.soto@roomies.test` |
+| Moderator | Camila Rojas | `camila.rojas@roomies.test` |
+
+The seeded `@roomies.test` addresses cannot receive mail. To show a real email, sign up with a
+real address and request a password reset, or apply to a listing with it.
 
 ## After Pulling Changes
 

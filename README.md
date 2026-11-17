@@ -2,6 +2,8 @@
 
 Roomies is a platform that connects people with a free room in a shared home to people looking for a place to live. This repository holds all the deliverables for the Web Technologies course project and will be used for every assignment throughout the term.
 
+**Live:** https://3-150-225-174.sslip.io (see [Deployment](#deployment))
+
 ## Group Members
 
 - Matías Veto
@@ -228,8 +230,8 @@ In development, messages are written to **`tmp/mails/`** rather than sent by SMT
 `bin/dev` after email configuration changes. Visit **`/rails/mailers`** for password reset and
 application notification previews; the previews use the seeded Sofía account and her applications.
 The development queue adapter is `:async`, which runs jobs inside the Rails process without a
-separate worker. Seeding also runs the application's notification callbacks, so sample-data
-emails can appear in `tmp/mails/`.
+separate worker. Seeding sends no emails: `db/seeds.rb` skips the notification callbacks while it
+runs, so the sample hosts and seekers are never emailed.
 
 Production uses Solid Queue. The Kamal configuration sets `SOLID_QUEUE_IN_PUMA: true` to start
 its supervisor in Puma. Emails are delivered for real through **Brevo's SMTP relay**
@@ -301,41 +303,142 @@ The static landing page in [`landing/`](./landing) is kept as history; the app's
 - **Real emails in production** through Brevo SMTP: password reset and application notifications
   reach the inbox, and withdrawing a listing now emails every seeker whose application was still
   undecided.
-- **Deployed with Kamal** on an AWS EC2 server, over HTTPS with a Let's Encrypt certificate.
+- **Deployed with Kamal 2** on an AWS EC2 server, over HTTPS with a Let's Encrypt certificate.
+  See [Deployment](#deployment).
 
 ### Public URL
 
-The server has no fixed IP: AWS gives it a new public IP each time the instance starts, so the
-address is not written here. The app is served at
+**https://3-150-225-174.sslip.io**
 
-```
-https://<server-ip-with-dashes>.sslip.io      e.g. 3.85.12.40 → https://3-85-12-40.sslip.io
-```
-
-`sslip.io` resolves that name to the IP, so no domain is needed. After the instance starts with a
-new IP, redeploy so the proxy, the certificate and `APP_HOST` (the host Rails accepts and links to
-in emails) follow it:
-
-```bash
-export ROOMIES_SERVER_IP=<new public IP>
-bin/kamal deploy
-```
-
-Check `https://<host>/up` (200) and the padlock before sharing the URL.
+The server has a fixed public address (an AWS Elastic IP, `3.150.225.174`), and `sslip.io`
+resolves `3-150-225-174.sslip.io` to it, so no domain had to be bought. `https://3-150-225-174.sslip.io/up`
+answers 200 when the application is healthy.
 
 ### Demo accounts
 
-The production database is loaded with the seeds (`bin/kamal app exec "bin/rails db:seed"`), so the
-[test users](#test-users) work there too, all with the password **`password123`**:
+The production database was loaded with the seeds once, when the application was first deployed
+(`bin/rails db:prepare` seeds an empty database). The [test users](#test-users) therefore work in
+production too, all with the password **`password123`**:
 
 | Role in the demo | User | Email |
 |---|---|---|
 | Seeker (member) | Sofía Araya | `sofia.araya@roomies.test` |
 | Host (member) | Valentina Soto | `valentina.soto@roomies.test` |
+| Host with an applications inbox | Matías Pérez | `matias.perez@roomies.test` |
 | Moderator | Camila Rojas | `camila.rojas@roomies.test` |
+
+In production, Valentina's draft listing is **`/listings/18`**: only she and the moderators can open
+it. (The seed prints a different id; production keeps the rows created since the first deploy.)
+
+**Never run `bin/rails db:seed` in production.** The seed starts by deleting every row, so it would
+erase everything created on the live site since the first deploy.
 
 The seeded `@roomies.test` addresses cannot receive mail. To show a real email, sign up with a
 real address and request a password reset, or apply to a listing with it.
+
+## Deployment
+
+Roomies runs in production at **https://3-150-225-174.sslip.io**, deployed with **Kamal 2** from
+[`config/deploy.yml`](./config/deploy.yml).
+
+### Why AWS and not DigitalOcean
+
+The course names DigitalOcean; the instructor allows another provider as long as every requirement
+is met. DigitalOcean only offered a US$5 credit, which does not last until the demo, so Roomies runs
+on an AWS EC2 instance. Everything else is what the course asks for: Kamal 2, PostgreSQL, a public
+URL and HTTPS.
+
+### What runs where
+
+One EC2 instance (`t3.small`: 2 vCPU, 2 GB of memory plus a 2 GB swap file, Ubuntu 24.04, x86-64,
+`us-east-2`) with an Elastic IP. Every process runs in a container started by Kamal:
+
+| Container | What it runs | Port |
+|---|---|---|
+| `kamal-proxy` | Terminates HTTPS with a Let's Encrypt certificate, redirects HTTP to HTTPS, forwards to the app | 80 and 443, public |
+| `roomies-web-<sha>` | Rails (Puma behind Thruster) plus the Solid Queue supervisor (`SOLID_QUEUE_IN_PUMA`) | 80, only inside the Docker network |
+| `roomies-db` | PostgreSQL 18, as a Kamal accessory | 5432, only inside the Docker network |
+| `buildx_buildkit_…` | The image builder (see below) | none |
+
+The firewall (security group) opens 80 and 443 to everyone and 22 only to the administrator's IP.
+PostgreSQL publishes no port, so it cannot be reached from the internet. Emails leave the app
+container through Brevo's SMTP relay (`smtp-relay.brevo.com:587`, STARTTLS); see [Emails](#emails).
+
+### Where the state lives
+
+| State | Where | After `kamal deploy` |
+|---|---|---|
+| Rows (users, listings, applications…) | Docker volume `roomies_postgres` | Kept: the database container is not replaced |
+| Photos and their variants (Active Storage) | Docker volume `roomies_storage`, mounted at `/rails/storage` | Kept |
+| Jobs (notification emails) | `roomies_production_queue` database, run by Solid Queue inside Puma | Kept; pending jobs run when the new container starts |
+| Cache and Action Cable | `roomies_production_cache` and `roomies_production_cable` databases | Kept |
+
+On its first start the container runs `bin/rails db:prepare` (see `bin/docker-entrypoint`): it
+creates the four databases, loads their schemas and runs `db/seeds.rb` once. The seed does not
+send emails. Later deploys only run pending migrations; they never seed again.
+
+### HTTPS
+
+The host name is `3-150-225-174.sslip.io`: sslip.io resolves any `<ip-with-dashes>.sslip.io` name to
+that IP, so no domain had to be bought. kamal-proxy obtains and renews the Let's Encrypt
+certificate. Rails runs with `assume_ssl` and `force_ssl` (secure cookies, HSTS), only answers for
+`APP_HOST` (`config.hosts`), and builds email links with `https://` and that host. `/up` is
+excluded from the redirect and the host check so the proxy's health check works.
+
+### Building the image
+
+The image is built **on the server** (`builder.remote` with `local: false`) and pushed from there to
+Docker Hub (`<user>/roomies`). Building on the laptop works, but pushing a large image over a slow
+home connection timed out. The image contains no secrets: `config/master.key` is in
+`.dockerignore`, and assets are precompiled with a dummy `SECRET_KEY_BASE`.
+
+### Secrets
+
+None of them is in the repository. `.kamal/secrets` only reads them from the environment.
+
+| Name | Kept | Reaches the server |
+|---|---|---|
+| `RAILS_MASTER_KEY` | `config/master.key` on the deployer's laptop (git-ignored) and a password manager | Kamal passes it to the app container; it decrypts `config/credentials.yml.enc` (`secret_key_base` and the `smtp:` login, key and sender) |
+| `ROOMIES_DATABASE_PASSWORD` | Deployer's laptop | App container (`config/database.yml`) and, as `POSTGRES_PASSWORD`, the database accessory |
+| `KAMAL_REGISTRY_PASSWORD` | Deployer's laptop; a Docker Hub **access token**, not the account password | Used by Kamal to log in to Docker Hub on the laptop and the server |
+| SSH private key | Deployer's laptop, mode 600 | Never copied; Kamal and Docker use it to connect |
+
+### Deploying it yourself
+
+You need: an Ubuntu 24.04 x86-64 server with at least 2 GB of memory (plus swap) and Docker
+installed, SSH access with a key as `ubuntu`, ports 80/443 open, a Docker Hub account with an access
+token, and Ruby, Bundler and Docker on your laptop. Add the server to `~/.ssh/config` with its key
+(the remote builder's SSH client reads it from there). Then export:
+
+```bash
+export ROOMIES_SERVER_IP=<server ip>
+export ROOMIES_SSH_KEY=<path to the private key>
+export KAMAL_REGISTRY_USERNAME=<docker hub user>
+export KAMAL_REGISTRY_PASSWORD=<docker hub access token>
+export ROOMIES_DATABASE_PASSWORD=<a long random password>
+export RAILS_MASTER_KEY=$(cat config/master.key)
+# optional, defaults to <ip-with-dashes>.sslip.io
+export ROOMIES_HOST=<your host name>
+```
+
+and run, the first time:
+
+```bash
+bin/kamal setup
+```
+
+After that, for every new commit:
+
+```bash
+bin/kamal deploy          # build, push and switch to the new version with no downtime
+bin/kamal app logs -f     # follow the logs
+bin/kamal console         # Rails console in production
+bin/kamal rollback <sha>  # go back to a previous version
+```
+
+If SSH times out, the administrator's IP changed: update the port 22 rule of the security group.
+If the new container fails with `Missing secret_key_base`, `RAILS_MASTER_KEY` was not exported; the
+previous version keeps serving meanwhile.
 
 ## After Pulling Changes
 
